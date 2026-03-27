@@ -20,8 +20,8 @@ One place for spoke math, rim/nipple geometry sketches, and tension visualizatio
 ### Phase 2 — Spoke length
 
 - Form inputs (hub, rim ERD, lacing, holes, offsets as needed).
-- Spoke length calculation in Python (document formula source in code).
-- SVG “wheel map”: which positions use which lengths (color or labels).
+- Spoke length calculation in Python (see `core/spoke_length.py`).
+- SVG wheel map: colors group identical lengths; per-spoke table (even = left, odd = right).
 
 ### Phase 3 — Rim / hub / nipple sketch
 

@@ -1,0 +1,85 @@
+from django import forms
+
+from .spoke_length import max_crosses
+
+
+def _spoke_count_choices():
+    return [(n, str(n)) for n in range(12, 53, 2)]
+
+
+class SpokeCalculatorForm(forms.Form):
+    erd_mm = forms.FloatField(
+        label="ERD (mm)",
+        min_value=200,
+        max_value=700,
+        help_text="Effective rim diameter at the nipple seat.",
+    )
+    spoke_count = forms.TypedChoiceField(
+        label="Spokes",
+        coerce=int,
+        choices=_spoke_count_choices(),
+        initial=32,
+    )
+    crosses = forms.IntegerField(
+        label="Crosses",
+        min_value=0,
+        max_value=20,
+        initial=3,
+        help_text="Per side; same pattern on left and right.",
+    )
+    left_flange_diameter_mm = forms.FloatField(
+        label="Left flange PCD (mm)",
+        min_value=20,
+        max_value=200,
+        help_text="Pitch circle diameter of spoke holes on the left flange.",
+    )
+    right_flange_diameter_mm = forms.FloatField(
+        label="Right flange PCD (mm)",
+        min_value=20,
+        max_value=200,
+        help_text="Usually matched to left on front hubs.",
+    )
+    rim_to_left_flange_mm = forms.FloatField(
+        label="Rim plane → left flange (mm)",
+        min_value=0,
+        max_value=120,
+        help_text="Axial distance from rim nipple plane to left flange hole circle.",
+    )
+    rim_to_right_flange_mm = forms.FloatField(
+        label="Rim plane → right flange (mm)",
+        min_value=0,
+        max_value=120,
+        help_text="Axial distance from rim nipple plane to right flange hole circle.",
+    )
+    nipple_correction_mm = forms.FloatField(
+        label="Nipple correction (mm)",
+        required=False,
+        initial=0.0,
+        help_text="Optional constant (e.g. spoke penetrate / average nipple). Added to all spokes.",
+    )
+    rotation_deg = forms.FloatField(
+        label="Rotation (deg)",
+        required=False,
+        initial=0.0,
+        help_text="Rotate the diagram CCW; does not change lengths.",
+    )
+
+    def clean(self):
+        data = super().clean()
+        if not data:
+            return data
+        if data.get("nipple_correction_mm") is None:
+            data["nipple_correction_mm"] = 0.0
+        if data.get("rotation_deg") is None:
+            data["rotation_deg"] = 0.0
+        sc = data.get("spoke_count")
+        cx = data.get("crosses")
+        if sc is not None and cx is not None:
+            limit = max_crosses(int(sc))
+            if cx > limit:
+                self.add_error(
+                    "crosses",
+                    f"For {sc} spokes, crosses must be ≤ {limit} "
+                    f"(tangential hole spacing).",
+                )
+        return data

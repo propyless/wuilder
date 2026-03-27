@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}wuild — spoke length{% endblock %}
+
+{% block content %}
+  <div class="prose">
+    <h1>Spoke length</h1>
+    <p class="lede">ERD, hub PCDs, rim-to-flange distances, crosses. Diagram uses even rim holes as <strong>left</strong>, odd as <strong>right</strong>.</p>
+  </div>
+
+  <form method="post" class="form-grid" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="form-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+    {% for field in form %}
+      <div class="field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="hint">{{ field.help_text }}</p>{% endif %}
+        {% for err in field.errors %}<p class="error">{{ err }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+    <div class="field field-span">
+      <button type="submit" class="btn">Calculate</button>
+    </div>
+  </form>
+
+  {% if summary %}
+    <section class="results prose">
+      <h2>Lengths</h2>
+      <p>Grouped to 0.1&nbsp;mm. Use the legend colors on the wheel.</p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Length (mm)</th>
+            <th>Count</th>
+            <th>Color</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in summary %}
+            <tr>
+              <td>{{ row.length_mm }}</td>
+              <td>{{ row.count }}</td>
+              <td><span class="swatch" style="background: {{ row.color }}"></span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h2>Per spoke</h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Side</th>
+            <th>Length (mm)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in spoke_rows %}
+            <tr>
+              <td>{{ s.index }}</td>
+              <td>{{ s.side }}</td>
+              <td>{{ s.length_mm|floatformat:1 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="wheel-panel">
+      <h2 class="wheel-title">Wheel map</h2>
+      <div class="wheel-wrap">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 240 240"
+          role="img"
+          aria-label="Spokes from rim to hub; colors match length groups"
+        >
+          <circle
+            cx="{{ wheel_svg.cx }}"
+            cy="{{ wheel_svg.cy }}"
+            r="{{ wheel_svg.hub_r }}"
+            class="wheel-hub"
+          />
+          <circle
+            cx="{{ wheel_svg.cx }}"
+            cy="{{ wheel_svg.cy }}"
+            r="{{ wheel_svg.rim_r }}"
+            class="wheel-rim"
+          />
+          {% for s in spoke_rows %}
+            <line
+              x1="{{ s.x1|floatformat:2 }}"
+              y1="{{ s.y1|floatformat:2 }}"
+              x2="{{ s.x2|floatformat:2 }}"
+              y2="{{ s.y2|floatformat:2 }}"
+              stroke="{{ s.color }}"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          {% endfor %}
+        </svg>
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}

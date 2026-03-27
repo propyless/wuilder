@@ -15,9 +15,9 @@ Check items off as we complete them. Prefer **one git commit per finished bullet
 
 ## Phase 2 — Spoke length
 
-- [ ] Spoke length calculator: form, validation, calculation module
-- [ ] Results page/table
-- [ ] Wheel plan SVG (spoke positions / length groups)
+- [x] Spoke length calculator: form, validation, calculation module
+- [x] Results page/table
+- [x] Wheel plan SVG (spoke positions / length groups)
 
 ## Phase 3 — Rim / hub / nipple
 
