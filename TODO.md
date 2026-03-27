@@ -19,11 +19,11 @@ Check items off as we complete them. Prefer **one git commit per finished bullet
 - [ ] Results page/table
 - [ ] Wheel plan SVG (spoke positions / length groups)
 
-## Phase 3 — Rim / nipple
+## Phase 3 — Rim / hub / nipple
 
-- [ ] Models: `Rim`, `Nipple` (fields TBD from sketch needs)
+- [ ] Models: `Rim`, `Hub` (flange / offset fields TBD), `Nipple` (fields TBD from sketch needs)
 - [ ] Migrations + admin registration
-- [ ] Rim cross-section SVG include (parameterized template)
+- [ ] Cross-section SVG include: rim + nipple + spoke line from **hub connection** to rim (parameterized template)
 
 ## Phase 4 — Tension
 

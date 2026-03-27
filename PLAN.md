@@ -23,10 +23,10 @@ One place for spoke math, rim/nipple geometry sketches, and tension visualizatio
 - Spoke length calculation in Python (document formula source in code).
 - SVG “wheel map”: which positions use which lengths (color or labels).
 
-### Phase 3 — Rim / nipple sketch
+### Phase 3 — Rim / hub / nipple sketch
 
-- Models: rim dimensions, nipple specs (minimum fields needed for engagement depth).
-- Django template partial: cross section (rim + nipple + spoke line), driven by context vars.
+- Models: **rim** dimensions, **hub** geometry (flange diameter, offsets / spacing as needed), **nipple** specs — enough to know **where the hub anchors the spoke** and how the line meets the rim well (engagement depth, thread in rim).
+- Django template partial: cross section (rim + nipple + spoke from **hub flange to nipple**), driven by context vars — not only the rim bed in isolation.
 
 ### Phase 4 — Tension
 
