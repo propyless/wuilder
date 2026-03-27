@@ -1,8 +1,11 @@
+import math
+
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from core.models import Hub, Nipple, Rim
 from core.section_layout import build_section_layout
+from core.spoke_length import spoke_length_mm
 
 
 class SectionLayoutTests(TestCase):
@@ -29,11 +32,35 @@ class SectionLayoutTests(TestCase):
         )
 
     def test_build_section_paths(self):
-        d = build_section_layout(self.rim, self.hub, self.nip, side="right")
+        hole = 2.6
+        crosses = 3
+        n = 32
+        d = build_section_layout(
+            self.rim,
+            self.hub,
+            self.nip,
+            side="right",
+            spoke_count=n,
+            crosses=crosses,
+            flange_hole_diameter_mm=hole,
+            nipple_correction_mm=0.0,
+        )
         self.assertTrue(d.rim_path.startswith("M"))
         self.assertIn("L", d.nipple_head_path)
-        # SVG y grows downward; nipple sits “above” the flange toward the rim.
         self.assertLess(d.nipple_y, d.flange_y)
+        w = self.hub.right_flange_offset_mm
+        raw = spoke_length_mm(
+            self.rim.erd_mm,
+            self.hub.right_flange_pcd_mm / 2,
+            w,
+            crosses,
+            n,
+        )
+        expect_L = raw - hole / 2
+        self.assertAlmostEqual(d.spoke_length_mm, expect_L, places=6)
+        dx_mm = (d.flange_x - d.nipple_x) / d.scale_mm_per_px
+        dy_mm = (d.flange_y - d.nipple_y) / d.scale_mm_per_px
+        self.assertAlmostEqual(math.hypot(dx_mm, dy_mm), expect_L, places=4)
 
 
 class RimSectionViewTests(TestCase):

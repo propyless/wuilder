@@ -1,5 +1,10 @@
 <section class="section-panel prose" aria-label="Rim cross-section diagram">
   <h2>Section</h2>
+  <p class="section-stats">
+    Spoke length (this side): <strong>{{ diagram.spoke_length_mm|floatformat:3 }}</strong> mm
+    · offset <strong>{{ diagram.flange_offset_mm|floatformat:2 }}</strong> mm
+    · in-plane leg √(L²−w²) <strong>{{ diagram.planar_chord_mm|floatformat:2 }}</strong> mm
+  </p>
   <div class="section-svg-wrap">
     <svg
       xmlns="http://www.w3.org/2000/svg"

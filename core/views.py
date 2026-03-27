@@ -110,23 +110,41 @@ def rim_section(request):
         if request.GET:
             form = SectionDiagramForm(request.GET)
             if form.is_valid():
+                d = form.cleaned_data
                 diagram = build_section_layout(
-                    form.cleaned_data['rim'],
-                    form.cleaned_data['hub'],
-                    form.cleaned_data['nipple'],
-                    side=form.cleaned_data['side'],
+                    d['rim'],
+                    d['hub'],
+                    d['nipple'],
+                    side=d['side'],
+                    spoke_count=int(d['spoke_count']),
+                    crosses=d['crosses'],
+                    flange_hole_diameter_mm=d['flange_hole_diameter_mm'],
+                    nipple_correction_mm=d['nipple_correction_mm'],
                 )
         else:
             rim = Rim.objects.order_by('pk').first()
             hub = Hub.objects.order_by('pk').first()
             nip = Nipple.objects.order_by('pk').first()
-            diagram = build_section_layout(rim, hub, nip, side='right')
+            diagram = build_section_layout(
+                rim,
+                hub,
+                nip,
+                side='right',
+                spoke_count=32,
+                crosses=3,
+                flange_hole_diameter_mm=2.6,
+                nipple_correction_mm=0.0,
+            )
             form = SectionDiagramForm(
                 initial={
                     'rim': rim.pk,
                     'hub': hub.pk,
                     'nipple': nip.pk,
                     'side': 'right',
+                    'spoke_count': 32,
+                    'crosses': 3,
+                    'flange_hole_diameter_mm': 2.6,
+                    'nipple_correction_mm': 0.0,
                 }
             )
 

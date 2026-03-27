@@ -5,7 +5,7 @@
 {% block content %}
   <div class="prose">
     <h1>Rim cross-section</h1>
-    <p class="lede">Schematic axial through one spoke: rim cavity, nipple head/body, and flange hole position vs. wheel center.</p>
+    <p class="lede">Axial cut through one flank: nipple on the center plane, flange offset by your hub. The <strong>spoke segment length</strong> matches the spoke calculator (lacing, hole halving, nipple correction).</p>
   </div>
 
   {% if not has_parts %}
@@ -28,6 +28,6 @@
       {% include "core/includes/section_svg.html" %}
     {% endif %}
 
-    <p class="prose note">Diagram is illustrative — not a manufacturer drawing. Depths and angles are simplified from your numeric inputs.</p>
+    <p class="prose note">The spoke line length matches the calculator; the rim cavity is still schematic. In-plane leg √(L²−w²) is the triangle leg opposite the flange offset *w* in this axial cut.</p>
   {% endif %}
 {% endblock %}

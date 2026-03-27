@@ -229,6 +229,13 @@ body {
   margin-top: 1.5rem;
 }
 
+.section-stats {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin: 0 0 0.75rem;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
 .section-svg-wrap {
   max-width: min(100%, 36rem);
   margin: 0 auto;

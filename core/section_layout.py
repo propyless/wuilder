@@ -1,16 +1,20 @@
 """
 2D schematic layout (axial plane through one spoke) for rim + nipple + spoke.
 
-Not a true 3D projection — a readable cross-section for “how deep does the nipple
-sit” and where the hub flange sits relative to the rim plane (x = wheel center).
+The nipple sits on the wheel center plane (x). The flange hole is offset axially by
+the hub flange offset *w*. The spoke segment length matches the same **ordering**
+length as `core.spoke_length` (including hub-hole halving and nipple correction):
+planar separation is sqrt(L² − w²) so hypot(axial, planar) = L indrawing units.
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Literal
 
 from .models import Hub, Nipple, Rim
+from .spoke_length import spoke_length_mm
 
 Side = Literal["left", "right"]
 
@@ -33,6 +37,9 @@ class SectionDiagram:
     head_top_y: float
     rim_top_y: float
     scale_mm_per_px: float
+    spoke_length_mm: float
+    flange_offset_mm: float
+    planar_chord_mm: float
 
 
 def build_section_layout(
@@ -41,15 +48,13 @@ def build_section_layout(
     nipple: Nipple,
     *,
     side: Side,
+    spoke_count: int,
+    crosses: int,
+    flange_hole_diameter_mm: float = 0.0,
+    nipple_correction_mm: float = 0.0,
 ) -> SectionDiagram:
-    # Pixels per mm — tuned so typical road wheel fits ~400×320 viewBox.
     s = 0.38
     cx = 210.0
-    hub_axis_y = 270.0
-
-    erd_r_px = (rim.erd_mm / 2.0) * s
-    nipple_y = hub_axis_y - erd_r_px
-    nipple_x = cx
 
     if side == "left":
         offset_mm = hub.left_flange_offset_mm
@@ -60,21 +65,43 @@ def build_section_layout(
         pcd_mm = hub.right_flange_pcd_mm
         sign = 1.0
 
-    r_f_px = (pcd_mm / 2.0) * s
-    flange_x = cx + sign * offset_mm * s
-    flange_y = hub_axis_y - r_f_px
+    r_fl_mm = pcd_mm / 2.0
+    raw = spoke_length_mm(
+        rim.erd_mm, r_fl_mm, offset_mm, crosses, spoke_count
+    )
+    spoke_L = (
+        raw
+        - (flange_hole_diameter_mm / 2.0)
+        + nipple_correction_mm
+    )
+
+    w = offset_mm
+    under_chord = spoke_L * spoke_L - w * w
+    planar_chord_mm = math.sqrt(max(under_chord, 0.0))
+
+    erd_r_px = (rim.erd_mm / 2.0) * s
+    # Anchor layout from a nominal hub-axis baseline so typical wheels fit the viewbox.
+    hub_axis_y = 270.0
+    nipple_y = hub_axis_y - erd_r_px
+    nipple_x = cx
+
+    dx_px = sign * w * s
+    flange_x = cx + dx_px
+    dy_px = planar_chord_mm * s
+    flange_y = nipple_y + dy_px
+
+    hub_axis_y = flange_y + 48.0
 
     inner_w = rim.inner_width_mm * s
     well_d = rim.well_depth_mm * s
     lip = max(5.0 * s, inner_w * 0.06)
 
     y_rim_top = nipple_y - well_d
-    x_in_l = cx - inner_w / 2
-    x_in_r = cx + inner_w / 2
     x_out_l = cx - inner_w / 2 - lip
     x_out_r = cx + inner_w / 2 + lip
+    x_in_l = cx - inner_w / 2
+    x_in_r = cx + inner_w / 2
 
-    # Schematic trapezoid cavity: outer lip at rim top, inner width at nipple seat.
     rim_path = (
         f"M {x_out_l:.2f} {y_rim_top:.2f} L {x_out_r:.2f} {y_rim_top:.2f} "
         f"L {x_in_r:.2f} {nipple_y:.2f} L {x_in_l:.2f} {nipple_y:.2f} Z"
@@ -121,4 +148,7 @@ def build_section_layout(
         head_top_y=head_top,
         rim_top_y=y_rim_top,
         scale_mm_per_px=s,
+        spoke_length_mm=spoke_L,
+        flange_offset_mm=w,
+        planar_chord_mm=planar_chord_mm,
     )
