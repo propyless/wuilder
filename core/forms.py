@@ -1,5 +1,6 @@
 from django import forms
 
+from .models import Hub, Nipple, Rim
 from .spoke_length import max_crosses
 
 
@@ -93,3 +94,26 @@ class SpokeCalculatorForm(forms.Form):
                     f"(tangential hole spacing).",
                 )
         return data
+
+
+class SectionDiagramForm(forms.Form):
+    """Pick parts for the rim cross-section schematic."""
+
+    SIDE_CHOICES = (
+        ("left", "Left flange"),
+        ("right", "Right flange"),
+    )
+    rim = forms.ModelChoiceField(queryset=Rim.objects.none(), label="Rim")
+    hub = forms.ModelChoiceField(queryset=Hub.objects.none(), label="Hub")
+    nipple = forms.ModelChoiceField(queryset=Nipple.objects.none(), label="Nipple")
+    side = forms.ChoiceField(
+        choices=SIDE_CHOICES,
+        initial="right",
+        label="Show spoke to",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["rim"].queryset = Rim.objects.all()
+        self.fields["hub"].queryset = Hub.objects.all()
+        self.fields["nipple"].queryset = Nipple.objects.all()

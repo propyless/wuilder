@@ -21,9 +21,9 @@ Check items off as we complete them. Prefer **one git commit per finished bullet
 
 ## Phase 3 — Rim / hub / nipple
 
-- [ ] Models: `Rim`, `Hub` (flange / offset fields TBD), `Nipple` (fields TBD from sketch needs)
-- [ ] Migrations + admin registration
-- [ ] Cross-section SVG include: rim + nipple + spoke line from **hub connection** to rim (parameterized template)
+- [x] Models: `Rim`, `Hub`, `Nipple`
+- [x] Migrations + admin registration
+- [x] Cross-section SVG (rim + nipple + spoke to flange); fixture `demo_parts`
 
 ## Phase 4 — Tension
 

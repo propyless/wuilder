@@ -50,6 +50,10 @@ body {
   color: var(--accent);
 }
 
+.nav-links a + a {
+  margin-left: 0.85rem;
+}
+
 .brand {
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -215,4 +219,33 @@ body {
   fill: #eae6dc;
   stroke: var(--muted);
   stroke-width: 1.25;
+}
+
+.section-form {
+  margin-bottom: 1rem;
+}
+
+.section-panel {
+  margin-top: 1.5rem;
+}
+
+.section-svg-wrap {
+  max-width: min(100%, 36rem);
+  margin: 0 auto;
+  background: #fffef9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.section-svg-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.prose.note {
+  margin-top: 1.5rem;
+  font-size: 0.92rem;
+  color: var(--muted);
 }

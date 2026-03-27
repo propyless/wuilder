@@ -1,0 +1,48 @@
+<section class="section-panel prose" aria-label="Rim cross-section diagram">
+  <h2>Section</h2>
+  <div class="section-svg-wrap">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 {{ diagram.view_w|floatformat:0 }} {{ diagram.view_h|floatformat:0 }}"
+      role="img"
+      aria-label="Rim cavity, nipple in well, spoke line to hub flange"
+    >
+      <defs>
+        <style>
+          .sec-rim { fill: #e0dcd2; stroke: #3d3931; stroke-width: 1.5; }
+          .sec-nipple-head { fill: #b87333; stroke: #4a2c0a; stroke-width: 1; }
+          .sec-nipple-shank { fill: #c9a06b; stroke: #4a2c0a; stroke-width: 1; }
+          .sec-spoke { stroke: #555; stroke-width: 2; fill: none; stroke-linecap: round; }
+          .sec-flange { fill: #6b6560; stroke: #2a2826; stroke-width: 1.2; }
+          .sec-axis { stroke: #c4bfb4; stroke-width: 1; stroke-dasharray: 5 4; }
+          .sec-label { fill: #5c574e; font-size: 11px; font-family: system-ui, sans-serif; }
+        </style>
+      </defs>
+
+      <line
+        class="sec-axis"
+        x1="{{ diagram.cx|floatformat:2 }}"
+        y1="20"
+        x2="{{ diagram.cx|floatformat:2 }}"
+        y2="{{ diagram.hub_axis_y|floatformat:2 }}"
+      />
+      <text class="sec-label" text-anchor="middle" x="{{ diagram.cx|floatformat:2 }}" y="14">Wheel center plane</text>
+
+      <path class="sec-rim" d="{{ diagram.rim_path }}" />
+      <path class="sec-nipple-head" d="{{ diagram.nipple_head_path }}" />
+      <path class="sec-nipple-shank" d="{{ diagram.nipple_body_path }}" />
+
+      <circle class="sec-flange" cx="{{ diagram.flange_x|floatformat:2 }}" cy="{{ diagram.flange_y|floatformat:2 }}" r="4.5" />
+      <line
+        class="sec-spoke"
+        x1="{{ diagram.nipple_x|floatformat:2 }}"
+        y1="{{ diagram.nipple_y|floatformat:2 }}"
+        x2="{{ diagram.flange_x|floatformat:2 }}"
+        y2="{{ diagram.flange_y|floatformat:2 }}"
+      />
+
+      <text class="sec-label" x="12" y="{{ diagram.rim_top_y|floatformat:2 }}">Cavity roof (schematic)</text>
+      <text class="sec-label" x="12" y="{{ diagram.hub_axis_y|floatformat:2 }}">Hub / axle region</text>
+    </svg>
+  </div>
+</section>

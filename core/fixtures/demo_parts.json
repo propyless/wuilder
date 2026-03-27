@@ -1,0 +1,34 @@
+[
+  {
+    "model": "core.rim",
+    "pk": 1,
+    "fields": {
+      "name": "Demo road rim",
+      "erd_mm": 599.0,
+      "inner_width_mm": 22.0,
+      "well_depth_mm": 17.0
+    }
+  },
+  {
+    "model": "core.hub",
+    "pk": 1,
+    "fields": {
+      "name": "Demo 32h hub",
+      "left_flange_pcd_mm": 92.6,
+      "right_flange_pcd_mm": 92.6,
+      "left_flange_offset_mm": 29.3,
+      "right_flange_offset_mm": 24.5
+    }
+  },
+  {
+    "model": "core.nipple",
+    "pk": 1,
+    "fields": {
+      "name": "Demo 12 mm nipple",
+      "head_diameter_mm": 7.2,
+      "head_height_mm": 5.5,
+      "body_length_mm": 12.0,
+      "shank_diameter_mm": 4.5
+    }
+  }
+]

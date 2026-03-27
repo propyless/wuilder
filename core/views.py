@@ -2,7 +2,9 @@ import math
 
 from django.shortcuts import render
 
-from .forms import SpokeCalculatorForm
+from .forms import SectionDiagramForm, SpokeCalculatorForm
+from .models import Hub, Nipple, Rim
+from .section_layout import build_section_layout
 from .spoke_length import build_spoke_results
 
 _LENGTH_COLORS = (
@@ -95,3 +97,45 @@ def spoke_calculator(request):
         }
 
     return render(request, 'core/spoke_calculator.html', context)
+
+
+def rim_section(request):
+    has_parts = (
+        Rim.objects.exists() and Hub.objects.exists() and Nipple.objects.exists()
+    )
+    diagram = None
+    form = None
+
+    if has_parts:
+        if request.GET:
+            form = SectionDiagramForm(request.GET)
+            if form.is_valid():
+                diagram = build_section_layout(
+                    form.cleaned_data['rim'],
+                    form.cleaned_data['hub'],
+                    form.cleaned_data['nipple'],
+                    side=form.cleaned_data['side'],
+                )
+        else:
+            rim = Rim.objects.order_by('pk').first()
+            hub = Hub.objects.order_by('pk').first()
+            nip = Nipple.objects.order_by('pk').first()
+            diagram = build_section_layout(rim, hub, nip, side='right')
+            form = SectionDiagramForm(
+                initial={
+                    'rim': rim.pk,
+                    'hub': hub.pk,
+                    'nipple': nip.pk,
+                    'side': 'right',
+                }
+            )
+
+    return render(
+        request,
+        'core/rim_section.html',
+        {
+            'has_parts': has_parts,
+            'form': form,
+            'diagram': diagram,
+        },
+    )

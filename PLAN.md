@@ -25,8 +25,8 @@ One place for spoke math, rim/nipple geometry sketches, and tension visualizatio
 
 ### Phase 3 — Rim / hub / nipple sketch
 
-- Models: **rim** dimensions, **hub** geometry (flange diameter, offsets / spacing as needed), **nipple** specs — enough to know **where the hub anchors the spoke** and how the line meets the rim well (engagement depth, thread in rim).
-- Django template partial: cross section (rim + nipple + spoke from **hub flange to nipple**), driven by context vars — not only the rim bed in isolation.
+- Models in `core/models.py` (`Rim`, `Hub`, `Nipple`); admin registered; optional fixture `core/fixtures/demo_parts.json` (`loaddata demo_parts`).
+- Page `/section/`: `core/section_layout.py` builds paths; `templates/core/includes/section_svg.html` — schematic rim cavity, nipple head/shank, dashed center plane, spoke to chosen flange.
 
 ### Phase 4 — Tension
 
