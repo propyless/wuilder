@@ -9,9 +9,9 @@ Check items off as we complete them. Prefer **one git commit per finished bullet
 
 ## Phase 1 — Foundation
 
-- [ ] Create Python virtual environment and pin dependencies (`requirements.txt` or `pyproject.toml`)
-- [ ] Create Django project and core app (settings, URLs, `templates/`, `static/`)
-- [ ] Base template + simple home page
+- [x] Create Python virtual environment and pin dependencies (`requirements.txt` or `pyproject.toml`)
+- [x] Create Django project and core app (settings, URLs, `templates/`, `static/`)
+- [x] Base template + simple home page
 
 ## Phase 2 — Spoke length
 

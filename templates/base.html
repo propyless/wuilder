@@ -1,0 +1,20 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}wuild{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a href="{% url 'core:home' %}" class="brand">wuild</a>
+    </nav>
+  </header>
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
