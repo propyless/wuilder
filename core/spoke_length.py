@@ -2,17 +2,22 @@
 Spoke length from rim ERD, hub flange radius, axial offset, crosses, and spoke count.
 
 Uses the usual planar cosine law (rim circle / hub hole circle) extended with axial
-distance w, equivalent to:
+distance *w* (flange offset), equivalent to either of:
 
-    L = sqrt(R² + r² + w² − 2·R·r·cos(α))
+    horizontal² = R² + r² − 2·R·r·cos(α)
+    L_raw       = sqrt(horizontal² + w²)
 
-with α = 4π·C/N radians (C = crosses, N = total spokes). Same α is used for both
-flanks when cross pattern is symmetric.
+    L_raw = sqrt(R² + r² + w² − 2·R·r·cos(α))   # same value, expanded
+
+with α = 4π·C/N = 2π·C/(N/2) radians (C = crosses, N = total spokes), same as
+``theta = (2*math.pi*crosses) / (total_spokes//2)`` in two-step formulas.
+
+After *L_raw*, many calculators subtract half the **hub spoke hole diameter**
+(spoke passes through the hole; ordering length is shorter). Nipple / rim
+corrections are separate (see form).
 
 References: standard wheel-building geometry (e.g. Damon Rinard / Roger Musson style
 treatments of the hub–rim triangle).
-
-Nipple/slot corrections are not in the triangle; add them separately if needed.
 """
 
 from __future__ import annotations
@@ -25,10 +30,12 @@ Side = Literal["left", "right"]
 
 
 def lacing_angle_rad(crosses: int, total_spokes: int) -> float:
-    """Angle α between rim hole radial line and hub hole direction in the hub plane."""
+    """α in the hub plane; equals ``2π·crosses / (total_spokes/2)`` (per-side index)."""
     if total_spokes <= 0:
         raise ValueError("total_spokes must be positive")
-    return 4.0 * math.pi * crosses / total_spokes
+    if total_spokes % 2:
+        raise ValueError("total_spokes must be even")
+    return (2.0 * math.pi * crosses) / (total_spokes // 2)
 
 
 def spoke_length_mm(
@@ -80,6 +87,7 @@ def build_spoke_results(
     right_flange_radius_mm: float,
     left_flange_offset_mm: float,
     right_flange_offset_mm: float,
+    flange_hole_diameter_mm: float = 0.0,
     nipple_correction_mm: float = 0.0,
     rotation_rad: float = 0.0,
 ) -> list[SpokeResult]:
@@ -103,7 +111,7 @@ def build_spoke_results(
         else:
             hub_phi = phi + alpha
         raw = spoke_length_mm(erd_mm, r_fl, w_fl, crosses, n)
-        length = raw + nipple_correction_mm
+        length = raw - (flange_hole_diameter_mm / 2.0) + nipple_correction_mm
         out.append(
             SpokeResult(
                 index=i,

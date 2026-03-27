@@ -51,6 +51,14 @@ class SpokeCalculatorForm(forms.Form):
         max_value=120,
         help_text="From the wheel center plane to the right flange hole circle — same idea as *R* on hub offset diagrams.",
     )
+    flange_hole_diameter_mm = forms.FloatField(
+        label="Hub spoke hole diameter (mm)",
+        required=False,
+        initial=0.0,
+        min_value=0,
+        max_value=10,
+        help_text="Subtracts half this from length (spoke in hole). Use e.g. 2.6 to match many hub sheets and third-party calculators; 0 = raw center-to-center.",
+    )
     nipple_correction_mm = forms.FloatField(
         label="Nipple correction (mm)",
         required=False,
@@ -70,6 +78,8 @@ class SpokeCalculatorForm(forms.Form):
             return data
         if data.get("nipple_correction_mm") is None:
             data["nipple_correction_mm"] = 0.0
+        if data.get("flange_hole_diameter_mm") is None:
+            data["flange_hole_diameter_mm"] = 0.0
         if data.get("rotation_deg") is None:
             data["rotation_deg"] = 0.0
         sc = data.get("spoke_count")

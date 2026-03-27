@@ -23,6 +23,19 @@ class SpokeLengthFormulaTests(SimpleTestCase):
         deg = math.degrees(lacing_angle_rad(3, 32))
         self.assertAlmostEqual(deg, 67.5, places=5)
 
+    def test_lacing_angle_matches_two_step_theta(self):
+        """θ = 2π·C/n_side equals 4π·C/N (reference scripts)."""
+        for spokes, cross in ((32, 3), (36, 3), (28, 2)):
+            n_side = spokes // 2
+            theta = (2 * math.pi * cross) / n_side
+            self.assertAlmostEqual(
+                lacing_angle_rad(cross, spokes), theta, places=12
+            )
+
+    def test_lacing_angle_rejects_odd_total(self):
+        with self.assertRaises(ValueError):
+            lacing_angle_rad(3, 31)
+
 
 class MaxCrossesTests(SimpleTestCase):
     def test_bound(self):
@@ -64,3 +77,37 @@ class BuildSpokesTests(SimpleTestCase):
         self.assertEqual(len(left), 1)
         self.assertEqual(len(right), 1)
         self.assertNotEqual(left, right)
+
+
+class ReferenceScriptParityTests(SimpleTestCase):
+    """Same geometry as two-step sqrt(horizontal²+O²) − hole_dia/2."""
+
+    def test_user_reference_wheel(self):
+        n_side = 16
+        theta = (2 * math.pi * 3) / n_side
+        R_r = 599 / 2
+        R_f = 92.6 / 2
+        hole = 2.6
+
+        def ref_length(offset_mm: float) -> float:
+            horizontal = math.sqrt(
+                R_r**2 + R_f**2 - 2 * R_r * R_f * math.cos(theta)
+            )
+            return math.sqrt(horizontal**2 + offset_mm**2) - hole / 2
+
+        rows = build_spoke_results(
+            erd_mm=599,
+            spoke_count=32,
+            crosses=3,
+            left_flange_radius_mm=R_f,
+            right_flange_radius_mm=R_f,
+            left_flange_offset_mm=29.3,
+            right_flange_offset_mm=24.5,
+            flange_hole_diameter_mm=hole,
+            nipple_correction_mm=0,
+            rotation_rad=0,
+        )
+        left_len = next(s.length_mm for s in rows if s.side == "left")
+        right_len = next(s.length_mm for s in rows if s.side == "right")
+        self.assertAlmostEqual(left_len, ref_length(29.3), places=9)
+        self.assertAlmostEqual(right_len, ref_length(24.5), places=9)

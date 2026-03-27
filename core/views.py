@@ -36,6 +36,7 @@ def spoke_calculator(request):
             right_flange_radius_mm=d['right_flange_diameter_mm'] / 2,
             left_flange_offset_mm=d['left_flange_offset_mm'],
             right_flange_offset_mm=d['right_flange_offset_mm'],
+            flange_hole_diameter_mm=d['flange_hole_diameter_mm'],
             nipple_correction_mm=d['nipple_correction_mm'],
             rotation_rad=rotation_rad,
         )
