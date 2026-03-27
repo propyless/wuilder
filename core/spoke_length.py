@@ -34,14 +34,19 @@ def lacing_angle_rad(crosses: int, total_spokes: int) -> float:
 def spoke_length_mm(
     erd_mm: float,
     flange_radius_mm: float,
-    rim_to_flange_axial_mm: float,
+    flange_offset_mm: float,
     crosses: int,
     total_spokes: int,
 ) -> float:
-    """Straight-line distance (mm) from nipple seat circle (ERD) to flange hole."""
+    """Straight-line distance (mm) from nipple seat circle (ERD) to flange hole.
+
+    ``flange_offset_mm`` is axial distance from the wheel center plane (rim /
+    nipple plane when the rim is centered) to this flange's hole circle — the
+    usual left/right flange offset (e.g. *L* and *R* on hub diagrams).
+    """
     R = erd_mm / 2.0
     r = flange_radius_mm
-    w = rim_to_flange_axial_mm
+    w = flange_offset_mm
     alpha = lacing_angle_rad(crosses, total_spokes)
     under = R * R + r * r + w * w - 2.0 * R * r * math.cos(alpha)
     if under < 0.0:
@@ -73,8 +78,8 @@ def build_spoke_results(
     crosses: int,
     left_flange_radius_mm: float,
     right_flange_radius_mm: float,
-    rim_to_left_flange_mm: float,
-    rim_to_right_flange_mm: float,
+    left_flange_offset_mm: float,
+    right_flange_offset_mm: float,
     nipple_correction_mm: float = 0.0,
     rotation_rad: float = 0.0,
 ) -> list[SpokeResult]:
@@ -89,7 +94,7 @@ def build_spoke_results(
     for i in range(n):
         side: Side = "left" if i % 2 == 0 else "right"
         r_fl = left_flange_radius_mm if side == "left" else right_flange_radius_mm
-        w_fl = rim_to_left_flange_mm if side == "left" else rim_to_right_flange_mm
+        w_fl = left_flange_offset_mm if side == "left" else right_flange_offset_mm
         base = 2.0 * math.pi * i / n
         phi = base + rotation_rad
         # Left flange holes “lag” vs right in a common convention; keeps diagram readable.

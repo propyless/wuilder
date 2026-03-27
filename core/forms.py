@@ -39,17 +39,17 @@ class SpokeCalculatorForm(forms.Form):
         max_value=200,
         help_text="Usually matched to left on front hubs.",
     )
-    rim_to_left_flange_mm = forms.FloatField(
-        label="Rim plane → left flange (mm)",
+    left_flange_offset_mm = forms.FloatField(
+        label="Left flange offset (mm)",
         min_value=0,
         max_value=120,
-        help_text="Axial distance from rim nipple plane to left flange hole circle.",
+        help_text="From the wheel center plane (rim / nipple plane when centered) to the left flange hole circle — same idea as *L* on hub offset diagrams.",
     )
-    rim_to_right_flange_mm = forms.FloatField(
-        label="Rim plane → right flange (mm)",
+    right_flange_offset_mm = forms.FloatField(
+        label="Right flange offset (mm)",
         min_value=0,
         max_value=120,
-        help_text="Axial distance from rim nipple plane to right flange hole circle.",
+        help_text="From the wheel center plane to the right flange hole circle — same idea as *R* on hub offset diagrams.",
     )
     nipple_correction_mm = forms.FloatField(
         label="Nipple correction (mm)",

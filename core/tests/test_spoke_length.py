@@ -38,8 +38,8 @@ class BuildSpokesTests(SimpleTestCase):
             crosses=3,
             left_flange_radius_mm=29,
             right_flange_radius_mm=29,
-            rim_to_left_flange_mm=34,
-            rim_to_right_flange_mm=34,
+            left_flange_offset_mm=34,
+            right_flange_offset_mm=34,
             nipple_correction_mm=0,
             rotation_rad=0,
         )
@@ -54,8 +54,8 @@ class BuildSpokesTests(SimpleTestCase):
             crosses=3,
             left_flange_radius_mm=31,
             right_flange_radius_mm=35,
-            rim_to_left_flange_mm=36,
-            rim_to_right_flange_mm=32,
+            left_flange_offset_mm=36,
+            right_flange_offset_mm=32,
             nipple_correction_mm=0,
             rotation_rad=0,
         )

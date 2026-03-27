@@ -34,8 +34,8 @@ def spoke_calculator(request):
             crosses=d['crosses'],
             left_flange_radius_mm=d['left_flange_diameter_mm'] / 2,
             right_flange_radius_mm=d['right_flange_diameter_mm'] / 2,
-            rim_to_left_flange_mm=d['rim_to_left_flange_mm'],
-            rim_to_right_flange_mm=d['rim_to_right_flange_mm'],
+            left_flange_offset_mm=d['left_flange_offset_mm'],
+            right_flange_offset_mm=d['right_flange_offset_mm'],
             nipple_correction_mm=d['nipple_correction_mm'],
             rotation_rad=rotation_rad,
         )
