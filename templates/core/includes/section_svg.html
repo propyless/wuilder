@@ -17,6 +17,7 @@
           .sec-rim { fill: #e0dcd2; stroke: #3d3931; stroke-width: 1.5; }
           .sec-nipple-head { fill: #b87333; stroke: #4a2c0a; stroke-width: 1; }
           .sec-nipple-shank { fill: #c9a06b; stroke: #4a2c0a; stroke-width: 1; }
+          .sec-thread-zone { fill: #8fa87a; fill-opacity: 0.45; stroke: #4a6630; stroke-width: 0.8; stroke-dasharray: 3 2; }
           .sec-spoke { stroke: #555; stroke-width: 2; fill: none; stroke-linecap: round; }
           .sec-flange { fill: #6b6560; stroke: #2a2826; stroke-width: 1.2; }
           .sec-axis { stroke: #c4bfb4; stroke-width: 1; stroke-dasharray: 5 4; }
@@ -36,6 +37,7 @@
       <path class="sec-rim" d="{{ diagram.rim_path }}" />
       <path class="sec-nipple-head" d="{{ diagram.nipple_head_path }}" />
       <path class="sec-nipple-shank" d="{{ diagram.nipple_body_path }}" />
+      <path class="sec-thread-zone" d="{{ diagram.nipple_thread_zone_path }}" />
 
       <circle class="sec-flange" cx="{{ diagram.flange_x|floatformat:2 }}" cy="{{ diagram.flange_y|floatformat:2 }}" r="4.5" />
       <line

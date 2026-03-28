@@ -73,6 +73,65 @@ class SpokeCalculatorForm(forms.Form):
         help_text="Rotate the diagram CCW; does not change lengths.",
     )
 
+    # -- Spoke-tip detail (optional): rim sketch + nipple + spoke thread -----
+    SIDE_CHOICES = (
+        ("right", "Right flange"),
+        ("left", "Left flange"),
+    )
+    section_side = forms.ChoiceField(
+        choices=SIDE_CHOICES,
+        initial="right",
+        required=False,
+        label="Show spoke to",
+        help_text="Which flange to compute spoke tip position for.",
+    )
+    rim_inner_width_mm = forms.FloatField(
+        label="Rim inner width (mm)",
+        required=False,
+        min_value=5,
+        max_value=80,
+        help_text="Schematic cavity width at nipple level.",
+    )
+    rim_well_depth_mm = forms.FloatField(
+        label="Rim depth (mm)",
+        required=False,
+        min_value=2,
+        max_value=60,
+        help_text="Outer rim edge to nipple seat (total rim height).",
+    )
+    rim_inner_wall_depth_mm = forms.FloatField(
+        label="Inner wall depth (mm)",
+        required=False,
+        min_value=1,
+        max_value=58,
+        help_text="Outer rim edge to cavity ceiling (outer wall thickness).",
+    )
+    nipple = forms.ModelChoiceField(
+        queryset=Nipple.objects.none(),
+        required=False,
+        label="Nipple",
+        help_text="Choose a saved nipple (with known thread length).",
+    )
+    spoke_thread_length_mm = forms.FloatField(
+        label="Spoke thread length (mm)",
+        required=False,
+        initial=16.0,
+        min_value=0,
+        max_value=50,
+        help_text="Threaded section from spoke tip inward (e.g. 16 mm for many 2.0/1.8).",
+    )
+    ordered_spoke_length_mm = forms.FloatField(
+        label="Ordered spoke length (mm)",
+        required=False,
+        min_value=100,
+        max_value=400,
+        help_text="Spoke you're buying (leave blank = use calculated length).",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["nipple"].queryset = Nipple.objects.all()
+
     def clean(self):
         data = super().clean()
         if not data:
@@ -83,6 +142,15 @@ class SpokeCalculatorForm(forms.Form):
             data["flange_hole_diameter_mm"] = 0.0
         if data.get("rotation_deg") is None:
             data["rotation_deg"] = 0.0
+        if data.get("spoke_thread_length_mm") is None:
+            data["spoke_thread_length_mm"] = 0.0
+        iwd = data.get("rim_inner_wall_depth_mm")
+        wd = data.get("rim_well_depth_mm")
+        if iwd is not None and wd is not None and iwd >= wd:
+            self.add_error(
+                "rim_inner_wall_depth_mm",
+                "Inner wall depth must be less than the total rim depth.",
+            )
         sc = data.get("spoke_count")
         cx = data.get("crosses")
         if sc is not None and cx is not None:

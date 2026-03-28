@@ -55,6 +55,10 @@ class Nipple(models.Model):
         default=4.0,
         help_text="Body OD at rim interface, schematic (mm).",
     )
+    internal_thread_length_mm = models.FloatField(
+        default=0.0,
+        help_text="Usable threaded bore length along nipple axis from seat toward hub (mm).",
+    )
 
     class Meta:
         ordering = ["name"]

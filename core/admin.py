@@ -29,5 +29,6 @@ class NippleAdmin(admin.ModelAdmin):
         "head_height_mm",
         "body_length_mm",
         "shank_diameter_mm",
+        "internal_thread_length_mm",
     )
     search_fields = ("name",)

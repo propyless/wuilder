@@ -1,0 +1,153 @@
+<section class="section-panel prose" aria-label="Spoke tip detail diagram">
+  <h2>Spoke tip position</h2>
+  <p class="section-stats">
+    Thread engagement: <strong>{{ nipple_fit.thread_engagement_mm|floatformat:1 }}</strong> mm
+    {% if nipple_fit.tip_from_seat_mm > 0 %}
+      · <strong>{{ nipple_fit.tip_from_seat_mm|floatformat:1 }}</strong> mm inside nipple
+    {% elif nipple_fit.tip_from_seat_mm == 0 %}
+      · tip at seat
+    {% else %}
+      · <strong class="warn">{{ nipple_fit.tip_from_seat_mm|floatformat:1 }}</strong> mm into cavity
+    {% endif %}
+    · <strong{% if nipple_fit.tip_to_rim_outer_mm < 0 %} class="warn"{% endif %}>{{ nipple_fit.tip_to_rim_outer_mm|floatformat:1 }}</strong> mm from rim edge
+  </p>
+  <div class="section-svg-wrap">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 {{ detail.view_w|floatformat:0 }} {{ detail.view_h|floatformat:0 }}"
+      role="img"
+      aria-label="Zoomed cross-section: rim cavity, nipple, spoke tip position"
+    >
+      <defs>
+        <style>
+          .det-rim { fill: #c8c3b8; stroke: #3d3931; stroke-width: 1.5; }
+          .det-rim-cavity { fill: #f5f3ef; stroke: #9e9889; stroke-width: 0.8; }
+          .det-nipple-head { fill: #b87333; stroke: #4a2c0a; stroke-width: 1; }
+          .det-nipple-shank { fill: #c9a06b; stroke: #4a2c0a; stroke-width: 1; }
+          .det-thread-zone { fill: #8fa87a; fill-opacity: 0.45; stroke: #4a6630; stroke-width: 0.8; stroke-dasharray: 3 2; }
+          .det-spoke { fill: #7a7a7a; stroke: #4a4a4a; stroke-width: 0.6; }
+          .det-spoke-tip-cap { fill: #c44040; }
+          .det-ref { stroke: #b0a899; stroke-width: 0.7; stroke-dasharray: 2 3; }
+          .det-dim { stroke: #8a3535; stroke-width: 0.9; fill: none; }
+          .det-dim-label { fill: #8a3535; font-size: 11px; font-family: system-ui, sans-serif; font-weight: 600; }
+          .det-label { fill: #5c574e; font-size: 10px; font-family: system-ui, sans-serif; }
+          .det-arrow { fill: #8a3535; }
+        </style>
+        <marker id="det-arrow-up" markerWidth="6" markerHeight="6" refX="3" refY="6" orient="auto">
+          <path d="M0,6 L3,0 L6,6" class="det-arrow"/>
+        </marker>
+        <marker id="det-arrow-down" markerWidth="6" markerHeight="6" refX="3" refY="0" orient="auto">
+          <path d="M0,0 L3,6 L6,0" class="det-arrow"/>
+        </marker>
+        <pattern id="spoke-thread-hatch" width="2.4" height="2.4"
+          patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+          <line x1="0" y1="0" x2="0" y2="2.4" stroke="#3a3a3a" stroke-width="0.5"/>
+        </pattern>
+      </defs>
+
+      {# Rim — double wall: outer shape then cavity cutout #}
+      <path class="det-rim" d="{{ detail.rim_path }}" />
+      <path class="det-rim-cavity" d="{{ detail.rim_cavity_path }}" />
+
+      {# Nipple (sits inside the cavity between walls) #}
+      <path class="det-nipple-head" d="{{ detail.nipple_head_path }}" />
+      <path class="det-nipple-shank" d="{{ detail.nipple_body_path }}" />
+      <path class="det-thread-zone" d="{{ detail.nipple_thread_zone_path }}" />
+
+      {# Reference lines #}
+      <line class="det-ref"
+        x1="20" y1="{{ detail.rim_outer_y|floatformat:2 }}"
+        x2="{{ detail.view_w|floatformat:0 }}" y2="{{ detail.rim_outer_y|floatformat:2 }}"
+      />
+      {% if detail.has_inner_wall_depth %}
+        <line class="det-ref"
+          x1="20" y1="{{ detail.rim_cavity_top_y|floatformat:2 }}"
+          x2="{{ detail.view_w|floatformat:0 }}" y2="{{ detail.rim_cavity_top_y|floatformat:2 }}"
+        />
+      {% endif %}
+      <line class="det-ref"
+        x1="20" y1="{{ detail.seat_y|floatformat:2 }}"
+        x2="{{ detail.view_w|floatformat:0 }}" y2="{{ detail.seat_y|floatformat:2 }}"
+      />
+      <line class="det-ref"
+        x1="20" y1="{{ detail.barrel_end_y|floatformat:2 }}"
+        x2="{{ detail.view_w|floatformat:0 }}" y2="{{ detail.barrel_end_y|floatformat:2 }}"
+      />
+
+      {# Reference labels #}
+      <text class="det-label" x="4" y="{{ detail.rim_outer_y|floatformat:2 }}" dy="-3">Outer wall</text>
+      {% if detail.has_inner_wall_depth %}
+        <text class="det-label" x="4" y="{{ detail.rim_cavity_top_y|floatformat:2 }}" dy="-3">Inner wall</text>
+        <text class="det-label" x="4" y="{{ detail.seat_y|floatformat:2 }}" dy="-3">Nipple seat</text>
+      {% else %}
+        <text class="det-label" x="4" y="{{ detail.seat_y|floatformat:2 }}" dy="-3">Inner wall / seat</text>
+      {% endif %}
+      <text class="det-label" x="4" y="{{ detail.barrel_end_y|floatformat:2 }}" dy="12">Barrel end</text>
+
+      {# Spoke wire — thin rectangle running through nipple bore #}
+      <rect class="det-spoke"
+        x="{{ detail.spoke_x|floatformat:2 }}" y="{{ detail.spoke_top_y|floatformat:2 }}"
+        width="{{ detail.spoke_w|floatformat:2 }}"
+        height="{{ detail.spoke_h|floatformat:2 }}"
+      />
+      {% if detail.spoke_thread_h > 0 %}
+      <rect
+        x="{{ detail.spoke_x|floatformat:2 }}" y="{{ detail.spoke_top_y|floatformat:2 }}"
+        width="{{ detail.spoke_w|floatformat:2 }}"
+        height="{{ detail.spoke_thread_h|floatformat:2 }}"
+        fill="url(#spoke-thread-hatch)" stroke="none"
+      />
+      {% endif %}
+      <rect class="det-spoke-tip-cap"
+        x="{{ detail.spoke_x|floatformat:2 }}" y="{{ detail.spoke_top_y|floatformat:2 }}"
+        width="{{ detail.spoke_w|floatformat:2 }}" height="2"
+      />
+      <text class="det-dim-label"
+        x="{{ detail.cx|floatformat:2 }}" y="{{ detail.spoke_top_y|floatformat:2 }}"
+        dx="{{ detail.spoke_w|floatformat:2 }}" dy="-4">spoke tip</text>
+
+      {# Dimension A: tip → seat (right side) #}
+      <line class="det-dim"
+        x1="{{ detail.dim_seat_x|floatformat:2 }}" y1="{{ detail.tip_y|floatformat:2 }}"
+        x2="{{ detail.dim_seat_x|floatformat:2 }}" y2="{{ detail.seat_y|floatformat:2 }}"
+        marker-start="url(#det-arrow-up)" marker-end="url(#det-arrow-down)"
+      />
+      {% if nipple_fit.tip_from_seat_mm > 0 %}
+        <text class="det-dim-label" text-anchor="start"
+          x="{{ detail.dim_seat_x|floatformat:2 }}" dx="6"
+          y="{{ detail.seat_y|floatformat:2 }}" dy="{{ detail.seat_mid_dy|floatformat:2 }}">{{ nipple_fit.tip_from_seat_mm|floatformat:1 }} mm inside</text>
+      {% elif nipple_fit.tip_from_seat_mm == 0 %}
+        <text class="det-dim-label" text-anchor="start"
+          x="{{ detail.dim_seat_x|floatformat:2 }}" dx="6"
+          y="{{ detail.seat_y|floatformat:2 }}" dy="-4">at seat</text>
+      {% else %}
+        <text class="det-dim-label" text-anchor="start"
+          x="{{ detail.dim_seat_x|floatformat:2 }}" dx="6"
+          y="{{ detail.tip_y|floatformat:2 }}" dy="{{ detail.seat_mid_dy|floatformat:2 }}">{{ nipple_fit.tip_from_seat_mm|floatformat:1 }} mm into cavity</text>
+      {% endif %}
+
+      {# Dimension B: tip → rim outer edge (left side) #}
+      <line class="det-dim"
+        x1="{{ detail.dim_rim_x|floatformat:2 }}" y1="{{ detail.tip_y|floatformat:2 }}"
+        x2="{{ detail.dim_rim_x|floatformat:2 }}" y2="{{ detail.rim_outer_y|floatformat:2 }}"
+        marker-start="url(#det-arrow-down)" marker-end="url(#det-arrow-up)"
+      />
+      <text class="det-dim-label" text-anchor="end"
+        x="{{ detail.dim_rim_x|floatformat:2 }}" dx="-6"
+        y="{{ detail.rim_outer_y|floatformat:2 }}" dy="{{ detail.rim_mid_dy|floatformat:2 }}">{{ nipple_fit.tip_to_rim_outer_mm|floatformat:1 }} mm</text>
+    </svg>
+  </div>
+  <ul class="detail-legend">
+    <li><span class="legend-swatch" style="background: #c8c3b8; border-color: #3d3931;"></span> Rim wall</li>
+    <li><span class="legend-swatch" style="background: #f5f3ef; border-color: #9e9889;"></span> Rim cavity</li>
+    <li><span class="legend-swatch" style="background: #b87333; border-color: #4a2c0a;"></span> Nipple head</li>
+    <li><span class="legend-swatch" style="background: #c9a06b; border-color: #4a2c0a;"></span> Nipple body</li>
+    <li><span class="legend-swatch legend-dashed" style="background: rgba(143,168,122,0.45); border-color: #4a6630;"></span> Threaded bore</li>
+    <li><span class="legend-swatch" style="background: #7a7a7a; border-color: #4a4a4a; width: 6px;"></span> Spoke wire</li>
+    <li><span class="legend-swatch" style="background: repeating-linear-gradient(35deg, #7a7a7a 0px, #7a7a7a 1px, #3a3a3a 1px, #3a3a3a 1.5px); border-color: #4a4a4a; width: 6px;"></span> Spoke thread</li>
+    <li><span class="legend-swatch" style="background: #c44040; border-color: #c44040; width: 6px; height: 4px;"></span> Spoke tip</li>
+    <li><span class="legend-line" style="border-color: #8a3535;"></span> Dimension</li>
+    <li><span class="legend-line" style="border-color: #b0a899; border-style: dashed;"></span> Reference line</li>
+  </ul>
+  <p class="prose note">Schematic — assumes spoke at ordering length, no stretch. Distances are geometric along the nipple axis.</p>
+</section>

@@ -1,10 +1,12 @@
 import math
+from types import SimpleNamespace
 
 from django.shortcuts import render
 
 from .forms import SectionDiagramForm, SpokeCalculatorForm
 from .models import Hub, Nipple, Rim
-from .section_layout import build_section_layout
+from .nipple_fit import compute_nipple_fit
+from .section_layout import build_section_detail, build_section_layout
 from .spoke_length import build_spoke_results
 
 _LENGTH_COLORS = (
@@ -95,6 +97,55 @@ def spoke_calculator(request):
             'rim_r': rim_r,
             'hub_r': hub_r,
         }
+
+        # -- Optional axial section + protrusion ----------------------------
+        nip = d.get('nipple')
+        has_rim_sketch = d.get('rim_inner_width_mm') and d.get('rim_well_depth_mm')
+        if nip and has_rim_sketch:
+            rim_ns = SimpleNamespace(
+                erd_mm=d['erd_mm'],
+                inner_width_mm=d['rim_inner_width_mm'],
+                well_depth_mm=d['rim_well_depth_mm'],
+            )
+            hub_ns = SimpleNamespace(
+                left_flange_pcd_mm=d['left_flange_diameter_mm'],
+                right_flange_pcd_mm=d['right_flange_diameter_mm'],
+                left_flange_offset_mm=d['left_flange_offset_mm'],
+                right_flange_offset_mm=d['right_flange_offset_mm'],
+            )
+            side = d.get('section_side') or 'right'
+            diagram = build_section_layout(
+                rim_ns,
+                hub_ns,
+                nip,
+                side=side,
+                spoke_count=int(d['spoke_count']),
+                crosses=d['crosses'],
+                flange_hole_diameter_mm=d['flange_hole_diameter_mm'],
+                nipple_correction_mm=d['nipple_correction_mm'],
+            )
+            spoke_thread = d.get('spoke_thread_length_mm') or 0.0
+            if spoke_thread > 0:
+                ordered = d.get('ordered_spoke_length_mm') or diagram.spoke_length_mm
+                fit = compute_nipple_fit(
+                    calculated_spoke_length_mm=diagram.spoke_length_mm,
+                    ordered_spoke_length_mm=ordered,
+                    nipple_body_length_mm=nip.body_length_mm,
+                    internal_thread_length_mm=nip.internal_thread_length_mm,
+                    spoke_thread_length_mm=spoke_thread,
+                    well_depth_mm=d['rim_well_depth_mm'],
+                )
+                context['nipple_fit'] = fit
+
+                detail = build_section_detail(
+                    nip,
+                    well_depth_mm=d['rim_well_depth_mm'],
+                    inner_width_mm=d['rim_inner_width_mm'],
+                    tip_from_seat_mm=fit.tip_from_seat_mm,
+                    spoke_thread_length_mm=spoke_thread,
+                    inner_wall_depth_mm=d.get('rim_inner_wall_depth_mm'),
+                )
+                context['detail'] = detail
 
     return render(request, 'core/spoke_calculator.html', context)
 
