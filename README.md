@@ -1,6 +1,6 @@
 # wuild
 
-Wheel build helpers (Django): spoke lengths, tension map (TM-1), rim section sketch.
+Wheel build helpers (Django): spoke lengths, tension map (TM-1); optional rim/nipple cross-section on the spoke page.
 
 ## Run locally
 

@@ -4,14 +4,13 @@ from types import SimpleNamespace
 
 from django.shortcuts import render
 
-from .forms import SectionDiagramForm, SpokeCalculatorForm, TensionMapForm
+from .forms import SpokeCalculatorForm, TensionMapForm
 from .hub_geometry import (
     build_hub_side_view_svg,
     build_illustrative_ratio_summary,
     geometry_ready_for_ratio,
     side_mean_spoke_lengths_mm,
 )
-from .models import Hub, Nipple, Rim
 from .nipple_fit import compute_nipple_fit
 from .section_layout import build_section_detail, build_section_layout
 from .spoke_length import build_spoke_results
@@ -333,63 +332,3 @@ def spoke_calculator(request):
         )
 
     return render(request, 'core/spoke_calculator.html', context)
-
-
-def rim_section(request):
-    has_parts = (
-        Rim.objects.exists() and Hub.objects.exists() and Nipple.objects.exists()
-    )
-    diagram = None
-    form = None
-
-    if has_parts:
-        if request.GET:
-            form = SectionDiagramForm(request.GET)
-            if form.is_valid():
-                d = form.cleaned_data
-                diagram = build_section_layout(
-                    d['rim'],
-                    d['hub'],
-                    d['nipple'],
-                    side=d['side'],
-                    spoke_count=int(d['spoke_count']),
-                    crosses=d['crosses'],
-                    flange_hole_diameter_mm=d['flange_hole_diameter_mm'],
-                    nipple_correction_mm=d['nipple_correction_mm'],
-                )
-        else:
-            rim = Rim.objects.order_by('pk').first()
-            hub = Hub.objects.order_by('pk').first()
-            nip = Nipple.objects.order_by('pk').first()
-            diagram = build_section_layout(
-                rim,
-                hub,
-                nip,
-                side='right',
-                spoke_count=32,
-                crosses=3,
-                flange_hole_diameter_mm=2.6,
-                nipple_correction_mm=0.0,
-            )
-            form = SectionDiagramForm(
-                initial={
-                    'rim': rim.pk,
-                    'hub': hub.pk,
-                    'nipple': nip.pk,
-                    'side': 'right',
-                    'spoke_count': 32,
-                    'crosses': 3,
-                    'flange_hole_diameter_mm': 2.6,
-                    'nipple_correction_mm': 0.0,
-                }
-            )
-
-    return render(
-        request,
-        'core/rim_section.html',
-        {
-            'has_parts': has_parts,
-            'form': form,
-            'diagram': diagram,
-        },
-    )

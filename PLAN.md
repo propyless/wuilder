@@ -8,7 +8,7 @@ One place for spoke math, rim/nipple geometry sketches, and tension visualizatio
 
 - **Backend:** Django (single app, migrations, admin for reference data).
 - **Frontend:** Server-rendered templates; **HTMX** optional for partial updates; **SVG** for rim, wheel, and tension diagrams (not Plotly for cross-sections).
-- **Cross-page build params:** **`localStorage`** (small vanilla JS) to persist the last spoke-calculator inputs—or a subset needed by tension / section—so users are not retyping offsets, ERD, PCDs, crosses, and spoke count when switching tools. Include a **schema version** key in the JSON blob so we can migrate or ignore stale payloads; UI copy should warn that stored values may be from another wheel.
+- **Cross-page build params:** **`localStorage`** (small vanilla JS) to persist the last spoke-calculator inputs—or a subset needed by the tension page—so users are not retyping offsets, ERD, PCDs, crosses, and spoke count when switching tools. Include a **schema version** key in the JSON blob so we can migrate or ignore stale payloads; UI copy should warn that stored values may be from another wheel.
 - **Charts:** Plotly only if we add true plots (e.g. tension histograms)—not for mechanical sketches.
 
 ## Phases
@@ -24,10 +24,10 @@ One place for spoke math, rim/nipple geometry sketches, and tension visualizatio
 - Spoke length calculation in Python (see `core/spoke_length.py`).
 - SVG wheel map: colors group identical lengths; per-spoke table (even = left, odd = right).
 
-### Phase 3 — Rim / hub / nipple sketch
+### Phase 3 — Rim / hub / nipple (data + embedded sketch)
 
 - Models in `core/models.py` (`Rim`, `Hub`, `Nipple`); admin registered; optional fixture `core/fixtures/demo_parts.json` (`loaddata demo_parts`).
-- Page `/section/`: `core/section_layout.py` builds paths; `templates/core/includes/section_svg.html` — schematic rim cavity, nipple head/shank, dashed center plane, spoke to chosen flange.
+- Cross-section schematic lives on the **spoke calculator** when you fill optional rim fields and choose a nipple: `core/section_layout.py`, `templates/core/includes/section_svg.html` / `section_detail_svg.html` — rim cavity, nipple, spoke to flange.
 
 ### Phase 4 — Tension
 
@@ -43,7 +43,7 @@ One place for spoke math, rim/nipple geometry sketches, and tension visualizatio
 
 **Goal:** Help builders connect TM-1 balance checks to *why* left/right targets differ, using the same flange offsets as the spoke-length tool—without implying that TM-1 readings *measure* rim dish in millimeters.
 
-**Status:** Core items below are implemented (`static/js/build_params.js`, `core/hub_geometry.py`, tension template + form fields, `core/tests/test_hub_geometry.py`). Optional follow-ups: `/section/` hydration from the same blob; richer hub drawing; spoke-count mismatch warning — see `TODO.md`.
+**Status:** Core items below are implemented (`static/js/build_params.js`, `core/hub_geometry.py`, tension template + form fields, `core/tests/test_hub_geometry.py`). Optional follow-ups: richer hub drawing; spoke-count mismatch warning — see `TODO.md`.
 
 **What to ship**
 
@@ -60,7 +60,7 @@ One place for spoke math, rim/nipple geometry sketches, and tension visualizatio
 
 3. **Data flow — `localStorage` (decision)**  
    - **Write:** On successful **spoke calculator** submit (or on “Update” after valid results), serialize a small JSON object to a single namespaced key (e.g. `wuild.buildParams.v1`) with fields needed downstream: at minimum **left/right flange offset**, plus **ERD**, **left/right flange PCD**, **crosses**, **spoke count**, and any fields required for the illustrative ratio math.  
-   - **Read:** On **tension** (and optionally **section**) page load, a short script reads the blob, pre-fills matching form fields or hidden inputs, and shows a one-line notice: *“Using saved hub/rim values from Spoke length — clear or edit below.”* Provide **Clear saved** (remove key) and always allow manual override; empty storage falls back to form defaults.  
+   - **Read:** On **tension** page load (or via **Load saved**), a short script reads the blob, pre-fills matching form fields, and can show a notice. Provide **Clear saved** (remove key) and always allow manual override; empty storage falls back to form defaults.  
    - **Why not session-only:** No server round-trip or login; works on static-ish deploys; pairs with Django forms by hydrating `value=` from server *or* client (prefer server initial render when POST repopulates; use JS only to merge in stored defaults when the form is fresh).  
    - **Later:** Optional **saved builds** on the server (Phase 5) can coexist—localStorage remains the fast default for a single in-progress wheel.
 

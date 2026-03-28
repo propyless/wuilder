@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Hub, Nipple, Rim
+from .models import Nipple
 from .spoke_length import max_crosses
 from .tm1 import TM1LookupError, chart_ids_and_labels, tension_kgf
 
@@ -152,74 +152,6 @@ class SpokeCalculatorForm(forms.Form):
                 "rim_inner_wall_depth_mm",
                 "Inner wall depth must be less than the total rim depth.",
             )
-        sc = data.get("spoke_count")
-        cx = data.get("crosses")
-        if sc is not None and cx is not None:
-            limit = max_crosses(int(sc))
-            if cx > limit:
-                self.add_error(
-                    "crosses",
-                    f"For {sc} spokes, crosses must be ≤ {limit} "
-                    f"(tangential hole spacing).",
-                )
-        return data
-
-
-class SectionDiagramForm(forms.Form):
-    """Pick parts for the rim cross-section schematic."""
-
-    SIDE_CHOICES = (
-        ("left", "Left flange"),
-        ("right", "Right flange"),
-    )
-    rim = forms.ModelChoiceField(queryset=Rim.objects.none(), label="Rim")
-    hub = forms.ModelChoiceField(queryset=Hub.objects.none(), label="Hub")
-    nipple = forms.ModelChoiceField(queryset=Nipple.objects.none(), label="Nipple")
-    side = forms.ChoiceField(
-        choices=SIDE_CHOICES,
-        initial="right",
-        label="Show spoke to",
-    )
-    spoke_count = forms.TypedChoiceField(
-        label="Spokes",
-        coerce=int,
-        choices=_spoke_count_choices(),
-        initial=32,
-    )
-    crosses = forms.IntegerField(
-        label="Crosses",
-        min_value=0,
-        max_value=20,
-        initial=3,
-    )
-    flange_hole_diameter_mm = forms.FloatField(
-        label="Hub spoke hole diameter (mm)",
-        required=False,
-        initial=2.6,
-        min_value=0,
-        max_value=10,
-        help_text="Same as spoke calculator: subtracts half from length. Use 0 for raw triangle only.",
-    )
-    nipple_correction_mm = forms.FloatField(
-        label="Nipple correction (mm)",
-        required=False,
-        initial=0.0,
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["rim"].queryset = Rim.objects.all()
-        self.fields["hub"].queryset = Hub.objects.all()
-        self.fields["nipple"].queryset = Nipple.objects.all()
-
-    def clean(self):
-        data = super().clean()
-        if not data:
-            return data
-        if data.get("nipple_correction_mm") is None:
-            data["nipple_correction_mm"] = 0.0
-        if data.get("flange_hole_diameter_mm") is None:
-            data["flange_hole_diameter_mm"] = 0.0
         sc = data.get("spoke_count")
         cx = data.get("crosses")
         if sc is not None and cx is not None:
