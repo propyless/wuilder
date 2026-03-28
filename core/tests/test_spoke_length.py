@@ -3,6 +3,7 @@ from django.test import SimpleTestCase
 
 from core.spoke_length import (
     build_spoke_results,
+    flange_offsets_from_hub_overall_width,
     lacing_angle_rad,
     max_crosses,
     spoke_length_mm,
@@ -35,6 +36,20 @@ class SpokeLengthFormulaTests(SimpleTestCase):
     def test_lacing_angle_rejects_odd_total(self):
         with self.assertRaises(ValueError):
             lacing_angle_rad(3, 31)
+
+
+class FlangeOffsetFromOverallWidthTests(SimpleTestCase):
+    def test_reference_hub_100_x265_y165(self):
+        """Matches common online offset helper: W=100, x=26.5, y=16.5 → L,R,F."""
+        o = flange_offsets_from_hub_overall_width(100.0, 26.5, 16.5)
+        self.assertAlmostEqual(o.half_width_mm, 50.0)
+        self.assertAlmostEqual(o.left_flange_offset_mm, 23.5)
+        self.assertAlmostEqual(o.right_flange_offset_mm, 33.5)
+        self.assertAlmostEqual(o.flange_to_flange_mm, 57.0)
+
+    def test_rejects_x_exceeding_half_width(self):
+        with self.assertRaises(ValueError):
+            flange_offsets_from_hub_overall_width(100.0, 51.0, 10.0)
 
 
 class MaxCrossesTests(SimpleTestCase):

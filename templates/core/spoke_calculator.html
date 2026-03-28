@@ -8,7 +8,7 @@
   <div class="spoke-page-layout">
     <div class="spoke-page-prose prose">
       <h1>Spoke length</h1>
-      <p class="lede">ERD, hub PCDs, <strong>left/right flange offsets</strong>, crosses. Wheel map: <strong>odd</strong> spoke numbers (#1, 3, …) = <strong>left</strong>; <strong>even</strong> (#2, 4, …) = <strong>right</strong> — same order as the tension map.</p>
+      <p class="lede">ERD, hub PCDs, <strong>left/right flange offsets</strong> (type them in or use the <strong>Flange offset calculator</strong> from overall width and <em>x</em> / <em>y</em>), crosses. Wheel map: <strong>odd</strong> spoke numbers (#1, 3, …) = <strong>left</strong>; <strong>even</strong> (#2, 4, …) = <strong>right</strong> — same order as the tension map.</p>
       <p class="hint">After building, <a href="{% url 'core:tension_map' %}">plot TM-1 readings</a> in the same spoke order.</p>
     </div>
 
@@ -25,6 +25,7 @@
         {% include "core/includes/_field.html" with field=f.crosses %}
         {% include "core/includes/_field.html" with field=f.left_flange_diameter_mm %}
         {% include "core/includes/_field.html" with field=f.right_flange_diameter_mm %}
+        {% include "core/includes/flange_offset_calc_panel.html" %}
         {% include "core/includes/_field.html" with field=f.left_flange_offset_mm %}
         {% include "core/includes/_field.html" with field=f.right_flange_offset_mm %}
         {% include "core/includes/_field.html" with field=f.flange_hole_diameter_mm %}
@@ -129,6 +130,7 @@
 {% endblock %}
 
 {% block extra_js %}
+  <script src="{% static 'js/flange_offset_calc.js' %}" defer></script>
   {% if build_params_json %}
     <script type="application/json" id="wuild-build-params-out">{{ build_params_json|safe }}</script>
     <script src="{% static 'js/build_params.js' %}"></script>

@@ -70,6 +70,55 @@ class SpokeResult:
     hub_angle_rad: float
 
 
+@dataclass(frozen=True)
+class FlangeOffsetsFromHubWidth:
+    """Flange offsets *L* / *R* and flange spacing *F* from overall hub width and *x* / *y*.
+
+    Convention (common on hub drawings): overall width is locknut-to-locknut (or outer
+    faces where the hub meets the frame). *x* = from the **left** outer face to the
+    **left** flange hole-circle center; *y* = from the **right** outer face to the
+    **right** flange center. The wheel center plane is **midway** between those faces
+    (half overall width *h*). Then *L* = *h* − *x*, *R* = *h* − *y*, *F* = *L* + *R*.
+    """
+
+    half_width_mm: float
+    left_flange_offset_mm: float
+    right_flange_offset_mm: float
+    flange_to_flange_mm: float
+
+
+def flange_offsets_from_hub_overall_width(
+    overall_width_mm: float,
+    left_outer_to_left_flange_mm: float,
+    right_outer_to_right_flange_mm: float,
+) -> FlangeOffsetsFromHubWidth:
+    """
+    Compute *L*, *R*, and *F* from hub overall width and edge-to-flange dimensions.
+
+    Raises ``ValueError`` if inputs are inconsistent (negative *L* or *R*).
+    """
+    if overall_width_mm <= 0:
+        raise ValueError("overall_width_mm must be positive")
+    h = overall_width_mm / 2.0
+    x = float(left_outer_to_left_flange_mm)
+    y = float(right_outer_to_right_flange_mm)
+    if x < 0 or y < 0:
+        raise ValueError("x and y must be non-negative")
+    L = h - x
+    R = h - y
+    if L < 0 or R < 0:
+        raise ValueError(
+            "x and y cannot exceed half the hub width (negative L or R)"
+        )
+    F = L + R
+    return FlangeOffsetsFromHubWidth(
+        half_width_mm=h,
+        left_flange_offset_mm=L,
+        right_flange_offset_mm=R,
+        flange_to_flange_mm=F,
+    )
+
+
 def max_crosses(total_spokes: int) -> int:
     """Upper bound for crosses so holes do not overlap tangentially (guard rail)."""
     if total_spokes < 4:

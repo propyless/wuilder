@@ -276,6 +276,113 @@ body.page-wide .main {
   margin: 0.4rem auto 0;
 }
 
+/* Flange offset calculator (spoke page) */
+.flange-offset-calc-details {
+  margin: 0.5rem 0 1rem;
+  padding: 0.45rem 0.55rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 254, 249, 0.75);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.flange-offset-calc-summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--fg);
+}
+
+.flange-offset-calc-inner {
+  margin-top: 0.45rem;
+}
+
+.flange-offset-calc-svg {
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  height: auto;
+  margin: 0.35rem 0 0.65rem;
+}
+
+.flange-calc-hub-body {
+  fill: #e8e4dc;
+  stroke: #6a655c;
+  stroke-width: 1.2;
+}
+
+.flange-calc-center-line {
+  stroke: #b03030;
+  stroke-width: 1.8;
+}
+
+.flange-calc-svg-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--fg);
+  font-family: system-ui, sans-serif;
+}
+
+.flange-calc-svg-small {
+  font-size: 10px;
+  fill: var(--muted);
+  font-family: system-ui, sans-serif;
+}
+
+.flange-offset-calc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.5rem 0.75rem;
+  margin: 0.5rem 0 0.65rem;
+}
+
+.flange-calc-field label {
+  font-size: 0.82rem;
+}
+
+.flange-offset-calc-results {
+  margin: 0.35rem 0 0.25rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(232, 245, 232, 0.5);
+  border: 1px solid rgba(120, 160, 120, 0.35);
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.84rem;
+}
+
+.flange-offset-calc-result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.flange-offset-calc-results dt {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.flange-offset-calc-results dd {
+  margin: 0;
+  font-weight: 700;
+  color: #1a5a2e;
+}
+
+.flange-offset-calc-result-lr dd {
+  font-size: 1rem;
+}
+
+.flange-calc-hint--error {
+  color: #8b2500;
+}
+
+.flange-offset-calc-actions {
+  margin: 0.55rem 0 0;
+}
+
 .wheel-panel {
   margin: 2rem 0 1rem;
 }
