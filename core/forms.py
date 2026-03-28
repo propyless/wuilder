@@ -264,6 +264,61 @@ class TensionMapForm(forms.Form):
         help_text="100% = Park style (each side vs its own average). Any other value applies a side ratio using the reference flange.",
     )
 
+    hub_erd_mm = forms.FloatField(
+        label="ERD (mm)",
+        required=False,
+        min_value=200.0,
+        max_value=700.0,
+        help_text="Optional — with PCDs and crosses, enables illustrative side ratio from hub geometry.",
+    )
+    hub_crosses = forms.IntegerField(
+        label="Crosses",
+        required=False,
+        min_value=0,
+        max_value=20,
+        help_text="Per side; same as Spoke length page.",
+    )
+    hub_left_flange_pcd_mm = forms.FloatField(
+        label="Left flange PCD (mm)",
+        required=False,
+        min_value=20.0,
+        max_value=200.0,
+    )
+    hub_right_flange_pcd_mm = forms.FloatField(
+        label="Right flange PCD (mm)",
+        required=False,
+        min_value=20.0,
+        max_value=200.0,
+    )
+    hub_left_offset_mm = forms.FloatField(
+        label="Left flange offset (mm)",
+        required=False,
+        min_value=0.0,
+        max_value=120.0,
+        help_text="From wheel center plane to left flange — same as Spoke length (*L*).",
+    )
+    hub_right_offset_mm = forms.FloatField(
+        label="Right flange offset (mm)",
+        required=False,
+        min_value=0.0,
+        max_value=120.0,
+        help_text="From center plane to right flange (*R*).",
+    )
+    hub_flange_hole_diameter_mm = forms.FloatField(
+        label="Hub spoke hole Ø (mm)",
+        required=False,
+        initial=0.0,
+        min_value=0.0,
+        max_value=10.0,
+        help_text="Optional; matches spoke calculator correction (0 = none).",
+    )
+    hub_nipple_correction_mm = forms.FloatField(
+        label="Nipple correction (mm)",
+        required=False,
+        initial=0.0,
+        help_text="Optional; added like the spoke calculator.",
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.fields["tension_ratio_other_pct"].help_text:
@@ -273,6 +328,18 @@ class TensionMapForm(forms.Form):
         self.fields["tm1_chart"].choices = chart_ids_and_labels()
         n = self._resolve_spoke_count()
         n_half = n // 2
+        hub_wattrs = {"class": "hub-geom-input", "step": "any"}
+        for name in (
+            "hub_erd_mm",
+            "hub_left_flange_pcd_mm",
+            "hub_right_flange_pcd_mm",
+            "hub_left_offset_mm",
+            "hub_right_offset_mm",
+            "hub_flange_hole_diameter_mm",
+            "hub_nipple_correction_mm",
+        ):
+            self.fields[name].widget.attrs.update(hub_wattrs)
+        self.fields["hub_crosses"].widget.attrs.update({"class": "hub-geom-input"})
         wattrs = {"class": "tm1-input", "step": "any", "min": "0"}
         for i in range(n_half):
             self.fields[f"left_{i}"] = forms.FloatField(
@@ -335,4 +402,20 @@ class TensionMapForm(forms.Form):
 
         data["readings_parsed"] = readings
         data["tensions_kgf"] = tensions
+
+        if data.get("hub_flange_hole_diameter_mm") is None:
+            data["hub_flange_hole_diameter_mm"] = 0.0
+        if data.get("hub_nipple_correction_mm") is None:
+            data["hub_nipple_correction_mm"] = 0.0
+
+        hc = data.get("hub_crosses")
+        n_spokes = data.get("spoke_count")
+        if hc is not None and n_spokes is not None:
+            limit = max_crosses(int(n_spokes))
+            if hc > limit:
+                self.add_error(
+                    "hub_crosses",
+                    f"For {n_spokes} spokes, crosses must be ≤ {limit} "
+                    f"(tangential hole spacing).",
+                )
         return data

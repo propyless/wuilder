@@ -1,9 +1,16 @@
+import json
 import math
 from types import SimpleNamespace
 
 from django.shortcuts import render
 
 from .forms import SectionDiagramForm, SpokeCalculatorForm, TensionMapForm
+from .hub_geometry import (
+    build_hub_side_view_svg,
+    build_illustrative_ratio_summary,
+    geometry_ready_for_ratio,
+    side_mean_spoke_lengths_mm,
+)
 from .models import Hub, Nipple, Rim
 from .nipple_fit import compute_nipple_fit
 from .section_layout import build_section_detail, build_section_layout
@@ -62,6 +69,8 @@ def tension_map(request):
     variance_pct = None
     ratio_summary = None
     balance_is_ratio = False
+    hub_side_svg = None
+    illustrative_ratio = None
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
         variance_pct = d["variance_percent"]
@@ -110,6 +119,46 @@ def tension_map(request):
             hub_r=wheel_svg["hub_r"],
         )
         radar_paths = {"left": lp, "right": rp}
+
+        lo = d.get("hub_left_offset_mm")
+        ro = d.get("hub_right_offset_mm")
+        if lo is not None and ro is not None:
+            hub_side_svg = build_hub_side_view_svg(lo, ro)
+
+        if geometry_ready_for_ratio(
+            erd_mm=d.get("hub_erd_mm"),
+            left_pcd_mm=d.get("hub_left_flange_pcd_mm"),
+            right_pcd_mm=d.get("hub_right_flange_pcd_mm"),
+            crosses=d.get("hub_crosses"),
+            left_offset_mm=lo,
+            right_offset_mm=ro,
+        ):
+            try:
+                ll, lr = side_mean_spoke_lengths_mm(
+                    erd_mm=float(d["hub_erd_mm"]),
+                    spoke_count=n,
+                    crosses=int(d["hub_crosses"]),
+                    left_flange_radius_mm=float(d["hub_left_flange_pcd_mm"]) / 2.0,
+                    right_flange_radius_mm=float(d["hub_right_flange_pcd_mm"]) / 2.0,
+                    left_flange_offset_mm=float(lo),
+                    right_flange_offset_mm=float(ro),
+                    flange_hole_diameter_mm=float(d["hub_flange_hole_diameter_mm"]),
+                    nipple_correction_mm=float(d["hub_nipple_correction_mm"]),
+                    rotation_rad=0.0,
+                )
+                ref_side = d["tension_ratio_reference"]
+                illustrative_ratio = build_illustrative_ratio_summary(
+                    reference_side=ref_side,
+                    left_avg_kgf=left_avg_kgf,
+                    right_avg_kgf=right_avg_kgf,
+                    w_left_mm=float(lo),
+                    w_right_mm=float(ro),
+                    avg_len_left_mm=ll,
+                    avg_len_right_mm=lr,
+                )
+            except (TypeError, ValueError, ZeroDivisionError):
+                illustrative_ratio = None
+
     left_side_rows = _tension_side_rows(form, "left", tension_rows, n_half)
     right_side_rows = _tension_side_rows(form, "right", tension_rows, n_half)
     return render(
@@ -130,6 +179,9 @@ def tension_map(request):
             "variance_pct": variance_pct,
             "balance_is_ratio": balance_is_ratio,
             "ratio_summary": ratio_summary,
+            "hub_side_svg": hub_side_svg,
+            "illustrative_ratio": illustrative_ratio,
+            "hydrate_build_params": request.method == "GET",
             "tm1_source_note": chart_source_note(),
         },
     )
@@ -264,6 +316,21 @@ def spoke_calculator(request):
                     inner_wall_depth_mm=d.get('rim_inner_wall_depth_mm'),
                 )
                 context['detail'] = detail
+
+        context["build_params_json"] = json.dumps(
+            {
+                "schema": 1,
+                "erd_mm": d["erd_mm"],
+                "spoke_count": int(d["spoke_count"]),
+                "crosses": d["crosses"],
+                "left_flange_diameter_mm": d["left_flange_diameter_mm"],
+                "right_flange_diameter_mm": d["right_flange_diameter_mm"],
+                "left_flange_offset_mm": d["left_flange_offset_mm"],
+                "right_flange_offset_mm": d["right_flange_offset_mm"],
+                "flange_hole_diameter_mm": d["flange_hole_diameter_mm"],
+                "nipple_correction_mm": d["nipple_correction_mm"],
+            }
+        )
 
     return render(request, 'core/spoke_calculator.html', context)
 

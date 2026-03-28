@@ -33,5 +33,13 @@ Check items off as we complete them. Prefer **one git commit per finished bullet
 
 ## Phase 5 — Polish
 
-- [ ] README: run locally, env vars, contributing
+- [ ] README: env vars, contributing (run locally + tests: see README.md)
 - [ ] Optional: saved builds / sessions
+
+## Tension + hub offsets (see PLAN.md § *Tension page — hub offset context*)
+
+- [x] Side-view SVG on tension page from left/right flange offsets (center plane + flanges)
+- [x] `localStorage` build-params save (spoke page) + load/clear/apply on tension page; optional hub geometry fields on `TensionMapForm`
+- [x] Illustrative geometry-based tension ratio vs measured averages (labeled approximation) + tests (`core/tests/test_hub_geometry.py`)
+- [ ] Optional follow-up: hydrate `/section/` from the same `localStorage` blob (that page is model pickers today — needs a deliberate approach)
+- [ ] Optional follow-up: extra hub schematic detail from plan (hub body / PCD circles); spoke-count mismatch warning when stored vs tension grid differ

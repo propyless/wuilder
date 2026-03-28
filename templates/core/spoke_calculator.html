@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}wuild — spoke length{% endblock %}
 {% block body_class %}page-spoke page-wide{% endblock %}
@@ -125,4 +126,16 @@
       {% endif %}
     </div>
   </div>
+{% endblock %}
+
+{% block extra_js %}
+  {% if build_params_json %}
+    <script type="application/json" id="wuild-build-params-out">{{ build_params_json|safe }}</script>
+    <script src="{% static 'js/build_params.js' %}"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.WuildBuildParams) WuildBuildParams.saveFromOutputEl("wuild-build-params-out");
+      });
+    </script>
+  {% endif %}
 {% endblock %}

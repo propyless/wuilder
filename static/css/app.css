@@ -1084,3 +1084,148 @@ body.page-wide .main {
   padding-top: 0.75rem;
   border-top: 1px solid var(--border);
 }
+
+.tension-hub-geom-details {
+  margin: 0.75rem 0 1rem;
+  padding: 0.5rem 0.65rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 254, 249, 0.65);
+}
+
+.tension-hub-geom-summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--fg);
+}
+
+.tension-hub-geom-inner {
+  margin-top: 0.55rem;
+}
+
+.tension-build-params-actions {
+  margin: 0.4rem 0 0.65rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.tension-build-params-btn {
+  font-size: 0.82rem;
+  padding: 0.28rem 0.55rem;
+}
+
+.tension-hub-geom-grid {
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.45rem 0.65rem;
+}
+
+.hub-geom-input {
+  width: 100%;
+  max-width: 8rem;
+  padding: 0.22rem 0.35rem;
+  font-size: 0.82rem;
+}
+
+.tension-chart-panel .hub-side-view-wrap,
+.tension-chart-panel .tension-illustrative-ratio {
+  max-width: var(--tension-wheel-figure-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hub-side-view-wrap {
+  margin: 0 auto 0.75rem;
+  padding: 0.55rem 0.6rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 254, 249, 0.85);
+  box-sizing: border-box;
+}
+
+.hub-side-view-hint {
+  margin: 0.25rem 0 0.45rem;
+  font-size: 0.8rem;
+}
+
+.hub-side-view-svg {
+  display: block;
+  width: 100%;
+  max-height: 8rem;
+  margin: 0 auto;
+}
+
+.hub-side-axle {
+  stroke: #444;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.hub-side-center-plane {
+  stroke: #8b6914;
+  stroke-width: 1.6;
+  stroke-dasharray: 5 4;
+}
+
+.hub-side-flange-mark {
+  stroke: #1e4a8a;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.hub-side-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: system-ui, sans-serif;
+  fill: var(--fg, #222);
+}
+
+.hub-side-label-center {
+  font-size: 9px;
+  font-weight: 500;
+  fill: var(--muted, #666);
+}
+
+.hub-side-view-dl {
+  margin: 0.45rem 0 0;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+}
+
+.hub-side-view-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.hub-side-view-dl dt {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.hub-side-view-dl dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.tension-illustrative-ratio {
+  margin: 0 auto 0.75rem;
+  padding: 0.55rem 0.6rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(248, 252, 255, 0.9);
+  font-size: 0.86rem;
+  color: var(--muted);
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.tension-illustrative-hint {
+  margin: 0.25rem 0 0.4rem;
+  font-size: 0.78rem;
+}

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% load tension_tags %}
 
 {% block title %}wuild — tension map{% endblock %}
@@ -75,6 +76,27 @@
         </div>
       </div>
     </div>
+
+    <details class="tension-hub-geom-details" id="tension-hub-geom-details">
+      <summary class="tension-hub-geom-summary">Hub / rim geometry (optional)</summary>
+      <div class="tension-hub-geom-inner">
+        <p class="hint tension-build-params-notice" id="tension-build-params-notice" hidden>Values can be filled from your last <strong>Spoke length</strong> calculation (browser storage). They may be from another wheel — edit or clear if wrong.</p>
+        <p class="tension-build-params-actions">
+          <button type="button" class="btn tension-build-params-btn" id="tension-build-params-apply">Load saved from Spoke length</button>
+          <button type="button" class="btn tension-build-params-btn" id="tension-build-params-clear">Clear saved</button>
+        </p>
+        <div class="form-grid tension-hub-geom-grid">
+          {% include "core/includes/_field.html" with field=f.hub_erd_mm %}
+          {% include "core/includes/_field.html" with field=f.hub_crosses %}
+          {% include "core/includes/_field.html" with field=f.hub_left_flange_pcd_mm %}
+          {% include "core/includes/_field.html" with field=f.hub_right_flange_pcd_mm %}
+          {% include "core/includes/_field.html" with field=f.hub_left_offset_mm %}
+          {% include "core/includes/_field.html" with field=f.hub_right_offset_mm %}
+          {% include "core/includes/_field.html" with field=f.hub_flange_hole_diameter_mm %}
+          {% include "core/includes/_field.html" with field=f.hub_nipple_correction_mm %}
+        </div>
+      </div>
+    </details>
 
     <div class="tension-main-layout">
       <div class="tension-table-panel tension-table-left">
@@ -170,6 +192,23 @@
               </dl>
             </div>
           {% endif %}
+          {% include "core/includes/hub_side_view_svg.html" %}
+          {% if illustrative_ratio %}
+            <div class="tension-illustrative-ratio" role="region" aria-label="Illustrative geometry tension ratio">
+              <div class="tension-stat-block-title">Illustrative geometry ratio</div>
+              <p class="hint tension-illustrative-hint">From hub offsets and mean spoke lengths (axial balance model). <strong>Not a guarantee</strong> — compare to your measured averages below.</p>
+              <dl class="tension-ratio-dl">
+                <div class="tension-ratio-row">
+                  <dt>Illustrative {{ illustrative_ratio.other_side|capfirst }} vs {{ illustrative_ratio.reference_side|capfirst }} ref</dt>
+                  <dd><span class="tension-ratio-em">{{ illustrative_ratio.illustrative_other_pct|floatformat:1 }}%</span></dd>
+                </div>
+                <div class="tension-ratio-row">
+                  <dt>Measured {{ illustrative_ratio.other_side|capfirst }} vs {{ illustrative_ratio.reference_side|capfirst }} ref</dt>
+                  <dd><span class="tension-ratio-em">{{ illustrative_ratio.measured_other_as_pct_of_ref|floatformat:1 }}%</span></dd>
+                </div>
+              </dl>
+            </div>
+          {% endif %}
           <div class="wheel-wrap tension-radar-wrap">
             <div class="tension-stat-block-title">Tension radar</div>
             <svg
@@ -247,4 +286,38 @@
 
   <p class="prose note tm1-attrib">{{ tm1_source_note }}</p>
   <p class="prose note">TM-1 readings are comparative, not a lab tensiometer. Verify critical builds against Park’s current chart.</p>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'js/build_params.js' %}"></script>
+  <script>
+    (function () {
+      var hydrate = {{ hydrate_build_params|yesno:"true,false" }};
+      document.addEventListener("DOMContentLoaded", function () {
+        if (!window.WuildBuildParams) return;
+        var notice = document.getElementById("tension-build-params-notice");
+        var applyBtn = document.getElementById("tension-build-params-apply");
+        var clearBtn = document.getElementById("tension-build-params-clear");
+        var details = document.getElementById("tension-hub-geom-details");
+
+        function showNotice() {
+          if (notice) notice.hidden = false;
+        }
+        function tryApply() {
+          if (WuildBuildParams.applyToTensionForm()) {
+            showNotice();
+            if (details && !details.open) details.open = true;
+          }
+        }
+        if (hydrate) tryApply();
+        if (applyBtn) applyBtn.addEventListener("click", tryApply);
+        if (clearBtn) {
+          clearBtn.addEventListener("click", function () {
+            WuildBuildParams.clear();
+            if (notice) notice.hidden = true;
+          });
+        }
+      });
+    })();
+  </script>
 {% endblock %}

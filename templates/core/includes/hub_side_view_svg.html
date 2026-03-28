@@ -1,0 +1,70 @@
+{% if hub_side_svg %}
+  <div class="hub-side-view-wrap" role="region" aria-label="Hub flange offsets side view">
+    <div class="tension-stat-block-title">Hub offsets (axial)</div>
+    <p class="hint hub-side-view-hint">Wheel center plane and flange distances (same meaning as the Spoke length page). This is geometry, not measured dish.</p>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 {{ hub_side_svg.vb_w|floatformat:0 }} {{ hub_side_svg.vb_h|floatformat:0 }}"
+      class="hub-side-view-svg"
+      role="img"
+    >
+      <title>Left and right flange offset from center plane</title>
+      <line
+        x1="{{ hub_side_svg.left_flange_x|floatformat:2 }}"
+        y1="{{ hub_side_svg.axle_y|floatformat:2 }}"
+        x2="{{ hub_side_svg.right_flange_x|floatformat:2 }}"
+        y2="{{ hub_side_svg.axle_y|floatformat:2 }}"
+        class="hub-side-axle"
+      />
+      <line
+        x1="{{ hub_side_svg.center_x|floatformat:2 }}"
+        y1="{{ hub_side_svg.center_line_y1|floatformat:2 }}"
+        x2="{{ hub_side_svg.center_x|floatformat:2 }}"
+        y2="{{ hub_side_svg.center_line_y2|floatformat:2 }}"
+        class="hub-side-center-plane"
+      />
+      <line
+        x1="{{ hub_side_svg.left_flange_x|floatformat:2 }}"
+        y1="{{ hub_side_svg.flange_tick_y1|floatformat:2 }}"
+        x2="{{ hub_side_svg.left_flange_x|floatformat:2 }}"
+        y2="{{ hub_side_svg.flange_tick_y2|floatformat:2 }}"
+        class="hub-side-flange-mark"
+      />
+      <line
+        x1="{{ hub_side_svg.right_flange_x|floatformat:2 }}"
+        y1="{{ hub_side_svg.flange_tick_y1|floatformat:2 }}"
+        x2="{{ hub_side_svg.right_flange_x|floatformat:2 }}"
+        y2="{{ hub_side_svg.flange_tick_y2|floatformat:2 }}"
+        class="hub-side-flange-mark"
+      />
+      <text
+        x="{{ hub_side_svg.left_flange_x|floatformat:2 }}"
+        y="{{ hub_side_svg.label_y|floatformat:2 }}"
+        text-anchor="middle"
+        class="hub-side-label"
+      >L</text>
+      <text
+        x="{{ hub_side_svg.right_flange_x|floatformat:2 }}"
+        y="{{ hub_side_svg.label_y|floatformat:2 }}"
+        text-anchor="middle"
+        class="hub-side-label"
+      >R</text>
+      <text
+        x="{{ hub_side_svg.center_x|floatformat:2 }}"
+        y="11"
+        text-anchor="middle"
+        class="hub-side-label hub-side-label-center"
+      >center</text>
+    </svg>
+    <dl class="hub-side-view-dl">
+      <div class="hub-side-view-row">
+        <dt>Left offset</dt>
+        <dd>{{ hub_side_svg.left_offset_mm|floatformat:1 }} mm</dd>
+      </div>
+      <div class="hub-side-view-row">
+        <dt>Right offset</dt>
+        <dd>{{ hub_side_svg.right_offset_mm|floatformat:1 }} mm</dd>
+      </div>
+    </dl>
+  </div>
+{% endif %}
