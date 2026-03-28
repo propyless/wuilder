@@ -3,11 +3,20 @@ from types import SimpleNamespace
 
 from django.shortcuts import render
 
-from .forms import SectionDiagramForm, SpokeCalculatorForm
+from .forms import SectionDiagramForm, SpokeCalculatorForm, TensionMapForm
 from .models import Hub, Nipple, Rim
 from .nipple_fit import compute_nipple_fit
 from .section_layout import build_section_detail, build_section_layout
 from .spoke_length import build_spoke_results
+from .tension_viz import (
+    build_tension_radar_paths,
+    build_tension_ratio_summary,
+    build_tension_side_stats,
+    build_tension_spoke_rows,
+    side_average_kgf,
+    uses_side_ratio,
+)
+from .tm1 import chart_source_note
 
 _LENGTH_COLORS = (
     "#1b6b5c",
@@ -23,6 +32,107 @@ _LENGTH_COLORS = (
 
 def home(request):
     return render(request, 'core/home.html')
+
+
+def _tension_side_rows(form, side: str, tension_rows, n_half: int):
+    """Template rows: spoke #, bound field, optional TensionSpokeRow after valid submit."""
+    out = []
+    for j in range(n_half):
+        fn = f"{side}_{j}"
+        bf = form[fn]
+        spoke = 2 * j + (1 if side == "left" else 2)
+        tr = None
+        if tension_rows is not None:
+            idx = 2 * j if side == "left" else 2 * j + 1
+            tr = tension_rows[idx]
+        out.append({"spoke": spoke, "bf": bf, "row": tr})
+    return out
+
+
+def tension_map(request):
+    form = TensionMapForm(request.POST or None)
+    n_half = form._resolve_spoke_count() // 2
+    tension_rows = None
+    wheel_svg = None
+    radar_paths = None
+    left_avg_kgf = None
+    right_avg_kgf = None
+    left_side_stats = None
+    right_side_stats = None
+    variance_pct = None
+    ratio_summary = None
+    balance_is_ratio = False
+    if request.method == "POST" and form.is_valid():
+        d = form.cleaned_data
+        variance_pct = d["variance_percent"]
+        n = d["spoke_count"]
+        chart_id = d["tm1_chart"]
+        left_avg_kgf, right_avg_kgf = side_average_kgf(d["tensions_kgf"], n)
+        left_t = [d["tensions_kgf"][i] for i in range(0, n, 2)]
+        right_t = [d["tensions_kgf"][i] for i in range(1, n, 2)]
+        left_side_stats = build_tension_side_stats(
+            left_t,
+            variance_percent=variance_pct,
+            chart_id=chart_id,
+        )
+        right_side_stats = build_tension_side_stats(
+            right_t,
+            variance_percent=variance_pct,
+            chart_id=chart_id,
+        )
+        other_pct = d["tension_ratio_other_pct"]
+        balance_is_ratio = uses_side_ratio(other_pct)
+        row_kw: dict = {
+            "spoke_count": n,
+            "readings": d["readings_parsed"],
+            "tensions_kgf": d["tensions_kgf"],
+            "variance_percent": variance_pct,
+        }
+        if balance_is_ratio:
+            row_kw["balance_mode"] = "ratio"
+            row_kw["ratio_reference_side"] = d["tension_ratio_reference"]
+            row_kw["ratio_other_pct"] = other_pct
+            ratio_summary = build_tension_ratio_summary(
+                left_avg_kgf,
+                right_avg_kgf,
+                reference_side=d["tension_ratio_reference"],
+                other_pct=other_pct,
+            )
+        else:
+            row_kw["balance_mode"] = "per_side"
+        tension_rows = build_tension_spoke_rows(**row_kw)
+        wheel_svg = {"cx": 120.0, "cy": 120.0, "rim_r": 95.0, "hub_r": 28.0}
+        lp, rp = build_tension_radar_paths(
+            tension_rows,
+            cx=wheel_svg["cx"],
+            cy=wheel_svg["cy"],
+            rim_r=wheel_svg["rim_r"],
+            hub_r=wheel_svg["hub_r"],
+        )
+        radar_paths = {"left": lp, "right": rp}
+    left_side_rows = _tension_side_rows(form, "left", tension_rows, n_half)
+    right_side_rows = _tension_side_rows(form, "right", tension_rows, n_half)
+    return render(
+        request,
+        "core/tension_map.html",
+        {
+            "form": form,
+            "n_half": n_half,
+            "left_side_rows": left_side_rows,
+            "right_side_rows": right_side_rows,
+            "tension_rows": tension_rows,
+            "wheel_svg": wheel_svg,
+            "radar_paths": radar_paths,
+            "left_avg_kgf": left_avg_kgf,
+            "right_avg_kgf": right_avg_kgf,
+            "left_side_stats": left_side_stats,
+            "right_side_stats": right_side_stats,
+            "variance_pct": variance_pct,
+            "balance_is_ratio": balance_is_ratio,
+            "ratio_summary": ratio_summary,
+            "tm1_source_note": chart_source_note(),
+        },
+    )
 
 
 def spoke_calculator(request):
@@ -54,6 +164,23 @@ def spoke_calculator(request):
             for i, ln in enumerate(unique_lengths)
         }
 
+        left_spokes = [s for s in spokes if s.side == "left"]
+        right_spokes = [s for s in spokes if s.side == "right"]
+
+        def _side_summary_row(side_label: str, side_list: list) -> dict:
+            lk = length_key(side_list[0].length_mm)
+            return {
+                "side_label": side_label,
+                "length_mm": lk,
+                "count": len(side_list),
+                "color": color_by_length[lk],
+            }
+
+        summary = [
+            _side_summary_row("Left", left_spokes),
+            _side_summary_row("Right", right_spokes),
+        ]
+
         cx = cy = 120.0
         rim_r = 95.0
         avg_pcd = (d['left_flange_diameter_mm'] + d['right_flange_diameter_mm']) / 2
@@ -79,15 +206,6 @@ def spoke_calculator(request):
                     'y2': cy + hub_r * math.sin(phi_h),
                 }
             )
-
-        summary = [
-            {
-                'length_mm': ln,
-                'count': sum(1 for s in spokes if length_key(s.length_mm) == ln),
-                'color': color_by_length[ln],
-            }
-            for ln in unique_lengths
-        ]
 
         context['spoke_rows'] = spoke_rows
         context['summary'] = summary

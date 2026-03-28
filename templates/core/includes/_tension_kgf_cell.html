@@ -1,0 +1,4 @@
+{% load tension_tags %}
+{% if item.row %}
+  <span class="tension-kgf-value">{{ item.row.tension_kgf|kgf2 }}</span>{% if item.row.adjust_action %}<span class="tension-kgf-arrow tension-kgf-arrow--{% if item.row.adjust_short == 'T' %}tighten{% else %}loosen{% endif %}" title="{{ item.row.adjust_action }}" aria-label="{{ item.row.adjust_action }}">{% if item.row.adjust_short == 'T' %}↑{% else %}↓{% endif %}</span>{% endif %}
+{% else %}—{% endif %}

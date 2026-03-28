@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% load tension_tags %}
+
+{% block title %}wuild — tension map{% endblock %}
+{% block body_class %}page-tension page-wide{% endblock %}
+
+{% block content %}
+  <div class="prose">
+    <h1>Wheel tension balancing</h1>
+    <p class="lede">Enter a <strong>TM-1</strong> reading per spoke (left / right columns match the Spokes wheel map). We convert to kgf. Set <strong>other side as % of reference</strong> to <strong>100%</strong> for Park style (each side vs its own average), or another value for a <strong>side ratio</strong> (e.g. 84% for non-drive vs drive). The variance limit is ±% from that reference. Spokes outside the band show <strong>↑</strong> / <strong>↓</strong> next to tension and <strong>T</strong> / <strong>L</strong> on the wheel map.</p>
+  </div>
+
+  {% with f=form %}
+  <form method="post" class="tension-form-full" novalidate>
+    {% csrf_token %}
+    {% if f.non_field_errors %}
+      <div class="form-errors">{{ f.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="tension-controls-bar">
+      <div class="tension-controls-row">
+        <div class="tension-control tension-control-spokes">
+          {% include "core/includes/_field.html" with field=f.spoke_count %}
+        </div>
+        <div class="tension-control tension-control-wide">
+          {% include "core/includes/_field.html" with field=f.tm1_chart %}
+        </div>
+        <div class="tension-control tension-control-variance">
+          {% include "core/includes/_field.html" with field=f.variance_percent %}
+        </div>
+        <div class="tension-control tension-control-submit">
+          <div class="field tension-submit-field">
+            <span class="tension-submit-label" aria-hidden="true">&#8203;</span>
+            <button type="submit" class="btn tension-update-btn">Update</button>
+          </div>
+        </div>
+      </div>
+      <div class="tension-balance-block">
+        <div class="tension-balance-controls">
+          <div class="tension-balance-group tension-balance-group-ref">
+            <label class="tension-balance-label" for="{{ f.tension_ratio_reference.id_for_label }}">{{ f.tension_ratio_reference.label }}</label>
+            <div class="field tension-balance-widget">
+              {{ f.tension_ratio_reference }}
+              {% for err in f.tension_ratio_reference.errors %}<p class="error">{{ err }}</p>{% endfor %}
+            </div>
+            {% if f.tension_ratio_other_pct.help_text %}
+            <div class="tension-balance-hint-ref-col">
+              <p class="hint" id="id_tension_ratio_other_pct_hint">{{ f.tension_ratio_other_pct.help_text }}</p>
+            </div>
+            {% endif %}
+          </div>
+          <div class="tension-balance-group tension-balance-group-pct">
+            <label class="tension-balance-label" for="{{ f.tension_ratio_other_pct.id_for_label }}">{{ f.tension_ratio_other_pct.label }}</label>
+            <div class="field tension-balance-widget">
+              {{ f.tension_ratio_other_pct }}
+              {% for err in f.tension_ratio_other_pct.errors %}<p class="error">{{ err }}</p>{% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="tension-controls-help-row tension-controls-help-row-balance">
+          <p class="hint tension-controls-bar-hint">
+            Variance is ±% from each spoke’s reference (100% other-side = Park per-side average).
+          </p>
+          <details class="tension-help-details">
+            <summary class="tension-help-summary" aria-label="Help: how tension map controls work" title="Help">
+              <span class="tension-help-icon" aria-hidden="true">ℹ</span>
+            </summary>
+            <div class="tension-help-panel">
+              <p><strong>Readings</strong> — Left and right columns follow the same numbering as the Spokes wheel map. Values are TM-1 deflection units; we convert to kgf using the chart you pick.</p>
+              <p><strong>Variance</strong> — Each spoke is compared to a reference tension. The limit is ± this percentage from that reference.</p>
+              <p><strong>Other side as % of reference</strong> — At <strong>100%</strong>, references are Park-style: each side vs its own average. Any other value applies a <strong>side ratio</strong>: the non-reference side’s target is that percent of the reference side’s average (e.g. 84% for a typical disc rear).</p>
+              <p><strong>Map</strong> — Spoke color shows how far a spoke is from its reference; rim dots <strong>T</strong> / <strong>L</strong> mean tighten or loosen when outside the band. Arrows by kgf show the same.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <div class="tension-main-layout">
+      <div class="tension-table-panel tension-table-left">
+        <h2 class="tension-table-title tension-title-left">Left side spokes</h2>
+        <table class="tension-spoke-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>TM-1 reading</th>
+              <th>Tension (kgf)</th>
+              <th>vs ±{{ f.variance_percent.value|default:f.variance_percent.initial|floatformat:0 }}% {% if balance_is_ratio %}(ratio target){% else %}(side avg){% endif %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in left_side_rows %}
+              <tr>
+                <td class="tension-col-num">{{ item.spoke }}</td>
+                <td class="tension-col-input">{{ item.bf }}{% for err in item.bf.errors %}<span class="error tension-field-error">{{ err }}</span>{% endfor %}</td>
+                <td class="tension-col-kgf">{% include "core/includes/_tension_kgf_cell.html" with item=item %}</td>
+                <td class="tension-col-limit">{% if item.row %}<span class="{% if item.row.within_variance %}tension-ok{% else %}tension-bad-mark{% endif %}">{{ item.row.variance_limit_detail }}</span>{% else %}—{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if left_side_stats %}
+          {% include "core/includes/_tension_wta_side_stats.html" with side_title="Left side spokes" stats=left_side_stats vp=variance_pct %}
+        {% endif %}
+      </div>
+
+      <div class="tension-table-panel tension-table-right">
+        <h2 class="tension-table-title tension-title-right">Right side spokes</h2>
+        <table class="tension-spoke-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>TM-1 reading</th>
+              <th>Tension (kgf)</th>
+              <th>vs ±{{ f.variance_percent.value|default:f.variance_percent.initial|floatformat:0 }}% {% if balance_is_ratio %}(ratio target){% else %}(side avg){% endif %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in right_side_rows %}
+              <tr>
+                <td class="tension-col-num">{{ item.spoke }}</td>
+                <td class="tension-col-input">{{ item.bf }}{% for err in item.bf.errors %}<span class="error tension-field-error">{{ err }}</span>{% endfor %}</td>
+                <td class="tension-col-kgf">{% include "core/includes/_tension_kgf_cell.html" with item=item %}</td>
+                <td class="tension-col-limit">{% if item.row %}<span class="{% if item.row.within_variance %}tension-ok{% else %}tension-bad-mark{% endif %}">{{ item.row.variance_limit_detail }}</span>{% else %}—{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if right_side_stats %}
+          {% include "core/includes/_tension_wta_side_stats.html" with side_title="Right side spokes" stats=right_side_stats vp=variance_pct %}
+        {% endif %}
+      </div>
+
+      <div class="tension-chart-panel">
+        {% if wheel_svg and radar_paths and tension_rows %}
+          {% if left_avg_kgf is not None and right_avg_kgf is not None %}
+            <div class="tension-side-averages" role="region" aria-label="Same-side average tension">
+              <div class="tension-stat-block-title">Same-side average tension</div>
+              <div class="tension-stat-dual">
+                <div class="tension-stat-dual-item tension-stat-dual-left">
+                  <span class="tension-stat-side">Left</span>
+                  <span class="tension-stat-num">{{ left_avg_kgf|kgf2 }}</span>
+                  <span class="tension-stat-unit">kgf</span>
+                </div>
+                <div class="tension-stat-dual-divider" aria-hidden="true"></div>
+                <div class="tension-stat-dual-item tension-stat-dual-right">
+                  <span class="tension-stat-side">Right</span>
+                  <span class="tension-stat-num">{{ right_avg_kgf|kgf2 }}</span>
+                  <span class="tension-stat-unit">kgf</span>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+          {% if ratio_summary %}
+            <div class="tension-ratio-summary" role="region" aria-label="Side ratio summary">
+              <div class="tension-stat-block-title">Side ratio</div>
+              <dl class="tension-ratio-dl">
+                <div class="tension-ratio-row">
+                  <dt>Reference ({{ ratio_summary.reference_side|capfirst }})</dt>
+                  <dd>{{ ratio_summary.reference_avg_kgf|kgf2 }} kgf</dd>
+                </div>
+                <div class="tension-ratio-row">
+                  <dt>Target {{ ratio_summary.other_side|capfirst }} avg</dt>
+                  <dd><span class="tension-ratio-em">{{ ratio_summary.target_other_pct|floatformat:0 }}%</span> of reference → <span class="tension-ratio-em">{{ ratio_summary.target_other_avg_kgf|kgf2 }} kgf</span></dd>
+                </div>
+                <div class="tension-ratio-row">
+                  <dt>Measured {{ ratio_summary.other_side|capfirst }} avg</dt>
+                  <dd><span class="tension-ratio-em">{{ ratio_summary.measured_other_avg_kgf|kgf2 }} kgf</span> <span class="tension-ratio-pct-note">({{ ratio_summary.measured_other_as_pct_of_ref|floatformat:1 }}% of reference)</span></dd>
+                </div>
+              </dl>
+            </div>
+          {% endif %}
+          <div class="wheel-wrap tension-radar-wrap">
+            <div class="tension-stat-block-title">Tension radar</div>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 240 240"
+              role="img"
+              aria-label="Tension radar: blue left, orange right; rim-hole markers for spokes outside variance with tighten or loosen hint"
+            >
+              <circle cx="{{ wheel_svg.cx }}" cy="{{ wheel_svg.cy }}" r="{{ wheel_svg.hub_r }}" class="wheel-hub"/>
+              <circle cx="{{ wheel_svg.cx }}" cy="{{ wheel_svg.cy }}" r="{{ wheel_svg.rim_r }}" class="wheel-rim"/>
+              {% if radar_paths.left %}
+                <path d="{{ radar_paths.left }}" fill="rgba(45,90,180,0.12)" stroke="#2d5ab4" stroke-width="1.4" class="tension-radar-left"/>
+              {% endif %}
+              {% if radar_paths.right %}
+                <path d="{{ radar_paths.right }}" fill="rgba(200,110,40,0.1)" stroke="#c86e28" stroke-width="1.4" class="tension-radar-right"/>
+              {% endif %}
+              {% for row in tension_rows %}
+                <line
+                  x1="{{ row.x1|floatformat:2 }}"
+                  y1="{{ row.y1|floatformat:2 }}"
+                  x2="{{ row.x2|floatformat:2 }}"
+                  y2="{{ row.y2|floatformat:2 }}"
+                  stroke="{{ row.color }}"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  class="tension-spoke {{ row.band_class }}"
+                />
+              {% endfor %}
+              {% for row in tension_rows %}
+                {% if row.adjust_action %}
+                  <g class="tension-rim-callout">
+                    <title>Spoke {{ row.index }} ({{ row.side }}): {{ row.adjust_action }} — outside ±variance vs same-side average</title>
+                    <circle
+                      cx="{{ row.x1|floatformat:2 }}"
+                      cy="{{ row.y1|floatformat:2 }}"
+                      r="5.5"
+                      class="tension-rim-marker {% if row.adjust_short == 'T' %}tension-rim-marker-tighten{% else %}tension-rim-marker-loosen{% endif %}"
+                    />
+                    <text
+                      x="{{ row.badge_tx|floatformat:2 }}"
+                      y="{{ row.badge_ty|floatformat:2 }}"
+                      text-anchor="middle"
+                      dominant-baseline="middle"
+                      class="tension-rim-callout-label"
+                    >#{{ row.index }} {{ row.adjust_short }}</text>
+                  </g>
+                {% endif %}
+              {% endfor %}
+            </svg>
+            <ul class="tension-radar-legend">
+              <li><span class="tension-legend-dot" style="background:#2d5ab4;"></span> Left</li>
+              <li><span class="tension-legend-dot" style="background:#c86e28;"></span> Right</li>
+              <li><span class="tension-legend-dot tension-legend-dot-rim"></span> Out of band: <strong>T</strong> tighten · <strong>L</strong> loosen</li>
+            </ul>
+          </div>
+          <ul class="detail-legend tension-legend">
+            <li><span class="legend-line" style="border-color: #1b6b5c;"></span> Spoke ≤5% from side average</li>
+            <li><span class="legend-line" style="border-color: #b89a14;"></span> 5–10%</li>
+            <li><span class="legend-line" style="border-color: #c4802c;"></span> 10–15%</li>
+            <li><span class="legend-line" style="border-color: #9c2f2f;"></span> &gt;15%</li>
+          </ul>
+        {% else %}
+          <div class="tension-chart-placeholder wheel-wrap">
+            <p class="hint">Submit the form to see the tension radar and rim heatmap.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="tension-footer-submit">
+      <button type="submit" class="btn tension-update-btn">Update</button>
+    </div>
+  </form>
+  {% endwith %}
+
+  <p class="prose note tm1-attrib">{{ tm1_source_note }}</p>
+  <p class="prose note">TM-1 readings are comparative, not a lab tensiometer. Verify critical builds against Park’s current chart.</p>
+{% endblock %}

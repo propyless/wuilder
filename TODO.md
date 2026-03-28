@@ -27,9 +27,9 @@ Check items off as we complete them. Prefer **one git commit per finished bullet
 
 ## Phase 4 — Tension
 
-- [ ] Park TM-1 conversion data (per spoke diameter) as fixtures or code
-- [ ] Tension input UI + deviation metrics
-- [ ] Tension heatmap SVG (rim with per-spoke colors + legend)
+- [x] Park TM-1 conversion data (per spoke diameter) as fixtures or code
+- [x] Tension input UI + deviation metrics
+- [x] Tension heatmap SVG (rim with per-spoke colors + legend)
 
 ## Phase 5 — Polish
 

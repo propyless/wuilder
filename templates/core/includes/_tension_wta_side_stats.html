@@ -1,0 +1,34 @@
+{% load tension_tags %}
+{% if stats %}
+  <div class="tension-wta-stats-wrap">
+    <table class="tension-wta-stats">
+      <caption class="tension-wta-stats-title">{{ side_title }}</caption>
+      <tbody>
+        <tr>
+          <th scope="row">Average spoke tension (kgf)</th>
+          <td>{{ stats.avg_kgf|kgf2 }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Standard deviation of tension (kgf)</th>
+          <td>{{ stats.stdev_kgf|kgf2 }}</td>
+        </tr>
+        <tr>
+          <th scope="row">+{{ vp|floatformat:0 }}% upper tension limit (kgf)</th>
+          <td>{{ stats.upper_kgf|kgf2 }}</td>
+        </tr>
+        <tr>
+          <th scope="row">TM-1 reading at +{{ vp|floatformat:0 }}% limit</th>
+          <td>{% if stats.upper_reading is not None %}{{ stats.upper_reading|floatformat:2 }}{% else %}<span class="tension-stats-na">Outside chart</span>{% endif %}</td>
+        </tr>
+        <tr>
+          <th scope="row">-{{ vp|floatformat:0 }}% lower tension limit (kgf)</th>
+          <td>{{ stats.lower_kgf|kgf2 }}</td>
+        </tr>
+        <tr>
+          <th scope="row">TM-1 reading at -{{ vp|floatformat:0 }}% limit</th>
+          <td>{% if stats.lower_reading is not None %}{{ stats.lower_reading|floatformat:2 }}{% else %}<span class="tension-stats-na">Outside chart</span>{% endif %}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endif %}

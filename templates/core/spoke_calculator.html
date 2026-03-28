@@ -1,133 +1,128 @@
 {% extends "base.html" %}
 
 {% block title %}wuild — spoke length{% endblock %}
+{% block body_class %}page-spoke page-wide{% endblock %}
 
 {% block content %}
-  <div class="prose">
-    <h1>Spoke length</h1>
-    <p class="lede">ERD, hub PCDs, <strong>left/right flange offsets</strong>, crosses. Diagram: even rim holes = <strong>left</strong>, odd = <strong>right</strong>.</p>
-  </div>
-
-  {% with f=form %}
-  <form method="post" class="form-grid" novalidate>
-    {% csrf_token %}
-    {% if f.non_field_errors %}
-      <div class="form-errors">{{ f.non_field_errors }}</div>
-    {% endif %}
-
-    {% include "core/includes/_field.html" with field=f.erd_mm %}
-    {% include "core/includes/_field.html" with field=f.spoke_count %}
-    {% include "core/includes/_field.html" with field=f.crosses %}
-    {% include "core/includes/_field.html" with field=f.left_flange_diameter_mm %}
-    {% include "core/includes/_field.html" with field=f.right_flange_diameter_mm %}
-    {% include "core/includes/_field.html" with field=f.left_flange_offset_mm %}
-    {% include "core/includes/_field.html" with field=f.right_flange_offset_mm %}
-    {% include "core/includes/_field.html" with field=f.flange_hole_diameter_mm %}
-    {% include "core/includes/_field.html" with field=f.nipple_correction_mm %}
-    {% include "core/includes/_field.html" with field=f.rotation_deg %}
-
-    <fieldset class="field-span section-fieldset">
-      <legend>Spoke tip detail (optional)</legend>
-      <p class="hint">Fill these to see a zoomed rim/nipple diagram with spoke tip position.</p>
-      <div class="form-grid">
-        {% include "core/includes/_field.html" with field=f.section_side %}
-        {% include "core/includes/_field.html" with field=f.rim_inner_width_mm %}
-        {% include "core/includes/_field.html" with field=f.rim_well_depth_mm %}
-        {% include "core/includes/_field.html" with field=f.rim_inner_wall_depth_mm %}
-        {% include "core/includes/_field.html" with field=f.nipple %}
-        {% include "core/includes/_field.html" with field=f.spoke_thread_length_mm %}
-        {% include "core/includes/_field.html" with field=f.ordered_spoke_length_mm %}
-      </div>
-    </fieldset>
-
-    <div class="field field-span">
-      <button type="submit" class="btn">Calculate</button>
+  <div class="spoke-page-layout">
+    <div class="spoke-page-prose prose">
+      <h1>Spoke length</h1>
+      <p class="lede">ERD, hub PCDs, <strong>left/right flange offsets</strong>, crosses. Wheel map: <strong>odd</strong> spoke numbers (#1, 3, …) = <strong>left</strong>; <strong>even</strong> (#2, 4, …) = <strong>right</strong> — same order as the tension map.</p>
+      <p class="hint">After building, <a href="{% url 'core:tension_map' %}">plot TM-1 readings</a> in the same spoke order.</p>
     </div>
-  </form>
-  {% endwith %}
 
-  {% if summary %}
-    <section class="results prose">
-      <h2>Lengths</h2>
-      <p>Grouped to 0.1&nbsp;mm. Use the legend colors on the wheel.</p>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Length (mm)</th>
-            <th>Count</th>
-            <th>Color</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in summary %}
-            <tr>
-              <td>{{ row.length_mm }}</td>
-              <td>{{ row.count }}</td>
-              <td><span class="swatch" style="background: {{ row.color }}"></span></td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="spoke-page-form-col">
+      {% with f=form %}
+      <form method="post" class="form-grid spoke-page-form-grid" novalidate>
+        {% csrf_token %}
+        {% if f.non_field_errors %}
+          <div class="form-errors">{{ f.non_field_errors }}</div>
+        {% endif %}
 
-      <h2>Per spoke</h2>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Side</th>
-            <th>Length (mm)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in spoke_rows %}
-            <tr>
-              <td>{{ s.index }}</td>
-              <td>{{ s.side }}</td>
-              <td>{{ s.length_mm|floatformat:1 }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </section>
+        {% include "core/includes/_field.html" with field=f.erd_mm %}
+        {% include "core/includes/_field.html" with field=f.spoke_count %}
+        {% include "core/includes/_field.html" with field=f.crosses %}
+        {% include "core/includes/_field.html" with field=f.left_flange_diameter_mm %}
+        {% include "core/includes/_field.html" with field=f.right_flange_diameter_mm %}
+        {% include "core/includes/_field.html" with field=f.left_flange_offset_mm %}
+        {% include "core/includes/_field.html" with field=f.right_flange_offset_mm %}
+        {% include "core/includes/_field.html" with field=f.flange_hole_diameter_mm %}
+        {% include "core/includes/_field.html" with field=f.nipple_correction_mm %}
+        {% include "core/includes/_field.html" with field=f.rotation_deg %}
 
-    <section class="wheel-panel">
-      <h2 class="wheel-title">Wheel map</h2>
-      <div class="wheel-wrap">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 240 240"
-          role="img"
-          aria-label="Spokes from rim to hub; colors match length groups"
-        >
-          <circle
-            cx="{{ wheel_svg.cx }}"
-            cy="{{ wheel_svg.cy }}"
-            r="{{ wheel_svg.hub_r }}"
-            class="wheel-hub"
-          />
-          <circle
-            cx="{{ wheel_svg.cx }}"
-            cy="{{ wheel_svg.cy }}"
-            r="{{ wheel_svg.rim_r }}"
-            class="wheel-rim"
-          />
-          {% for s in spoke_rows %}
-            <line
-              x1="{{ s.x1|floatformat:2 }}"
-              y1="{{ s.y1|floatformat:2 }}"
-              x2="{{ s.x2|floatformat:2 }}"
-              y2="{{ s.y2|floatformat:2 }}"
-              stroke="{{ s.color }}"
-              stroke-width="1.6"
-              stroke-linecap="round"
-            />
-          {% endfor %}
-        </svg>
-      </div>
-    </section>
+        <fieldset class="field-span section-fieldset">
+          <legend>Spoke tip detail (optional)</legend>
+          <p class="hint">Fill these to see a zoomed rim/nipple diagram with spoke tip position.</p>
+          <div class="form-grid">
+            {% include "core/includes/_field.html" with field=f.section_side %}
+            {% include "core/includes/_field.html" with field=f.rim_inner_width_mm %}
+            {% include "core/includes/_field.html" with field=f.rim_well_depth_mm %}
+            {% include "core/includes/_field.html" with field=f.rim_inner_wall_depth_mm %}
+            {% include "core/includes/_field.html" with field=f.nipple %}
+            {% include "core/includes/_field.html" with field=f.spoke_thread_length_mm %}
+            {% include "core/includes/_field.html" with field=f.ordered_spoke_length_mm %}
+          </div>
+        </fieldset>
 
-    {% if detail %}
-      {% include "core/includes/section_detail_svg.html" %}
-    {% endif %}
-  {% endif %}
+        <div class="field field-span">
+          <button type="submit" class="btn">Calculate</button>
+        </div>
+      </form>
+      {% endwith %}
+    </div>
+
+    <div class="spoke-page-results-col">
+      {% if summary %}
+        <section class="results prose">
+
+          {% with left_row=summary|first right_row=summary|last %}
+            <div class="tension-side-averages spoke-page-lengths-card" role="region" aria-label="Spoke lengths by side">
+              <div class="tension-stat-block-title">Spoke lengths</div>
+              <div class="tension-stat-dual">
+                <div class="tension-stat-dual-item tension-stat-dual-left">
+                  <span class="tension-stat-side">{{ left_row.side_label }}</span>
+                  <span class="tension-stat-num">{{ left_row.length_mm }}</span>
+                  <span class="tension-stat-unit">mm</span>
+                  <span class="spoke-length-meta">{{ left_row.count }} spokes</span>
+                  <span class="swatch spoke-length-swatch" style="background: {{ left_row.color }}" title="Wheel map color"></span>
+                </div>
+                <div class="tension-stat-dual-divider" aria-hidden="true"></div>
+                <div class="tension-stat-dual-item tension-stat-dual-right">
+                  <span class="tension-stat-side">{{ right_row.side_label }}</span>
+                  <span class="tension-stat-num">{{ right_row.length_mm }}</span>
+                  <span class="tension-stat-unit">mm</span>
+                  <span class="spoke-length-meta">{{ right_row.count }} spokes</span>
+                  <span class="swatch spoke-length-swatch" style="background: {{ right_row.color }}" title="Wheel map color"></span>
+                </div>
+              </div>
+            </div>
+          {% endwith %}
+        </section>
+
+        <section class="wheel-panel spoke-page-wheel-panel">
+          <div class="wheel-wrap spoke-page-wheel-wrap">
+            <div class="tension-stat-block-title">Spoke lengths</div>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 240 240"
+              role="img"
+              aria-label="Spokes from rim to hub; colors match length groups"
+            >
+              <circle
+                cx="{{ wheel_svg.cx }}"
+                cy="{{ wheel_svg.cy }}"
+                r="{{ wheel_svg.hub_r }}"
+                class="wheel-hub"
+              />
+              <circle
+                cx="{{ wheel_svg.cx }}"
+                cy="{{ wheel_svg.cy }}"
+                r="{{ wheel_svg.rim_r }}"
+                class="wheel-rim"
+              />
+              {% for s in spoke_rows %}
+                <line
+                  x1="{{ s.x1|floatformat:2 }}"
+                  y1="{{ s.y1|floatformat:2 }}"
+                  x2="{{ s.x2|floatformat:2 }}"
+                  y2="{{ s.y2|floatformat:2 }}"
+                  stroke="{{ s.color }}"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                />
+              {% endfor %}
+            </svg>
+          </div>
+        </section>
+
+        {% if detail %}
+          {% include "core/includes/section_detail_svg.html" %}
+        {% endif %}
+      {% else %}
+        <div class="spoke-page-results-placeholder prose">
+          <p class="hint">Use <strong>Calculate</strong> to see spoke lengths and the wheel map here.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
 {% endblock %}

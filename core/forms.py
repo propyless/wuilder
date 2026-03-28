@@ -2,6 +2,7 @@ from django import forms
 
 from .models import Hub, Nipple, Rim
 from .spoke_length import max_crosses
+from .tm1 import TM1LookupError, chart_ids_and_labels, tension_kgf
 
 
 def _spoke_count_choices():
@@ -229,4 +230,109 @@ class SectionDiagramForm(forms.Form):
                     f"For {sc} spokes, crosses must be ≤ {limit} "
                     f"(tangential hole spacing).",
                 )
+        return data
+
+
+class TensionMapForm(forms.Form):
+    """TM-1 readings → tension heatmap; side ratio applies whenever other-side % ≠ 100."""
+
+    spoke_count = forms.TypedChoiceField(
+        label="Spokes",
+        coerce=int,
+        choices=_spoke_count_choices(),
+        initial=32,
+    )
+    tm1_chart = forms.ChoiceField(
+        label="TM-1 chart (spoke type)",
+    )
+    variance_percent = forms.FloatField(
+        label="Variance limit (%)",
+        min_value=1.0,
+        max_value=50.0,
+        initial=20.0,
+    )
+    tension_ratio_reference = forms.ChoiceField(
+        label="Reference side (100%)",
+        choices=(("left", "Left"), ("right", "Right")),
+        initial="left",
+    )
+    tension_ratio_other_pct = forms.FloatField(
+        label="Other side as % of reference avg",
+        min_value=30.0,
+        max_value=150.0,
+        initial=100.0,
+        help_text="100% = Park style (each side vs its own average). Any other value applies a side ratio using the reference flange.",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.fields["tension_ratio_other_pct"].help_text:
+            self.fields["tension_ratio_other_pct"].widget.attrs["aria-describedby"] = (
+                "id_tension_ratio_other_pct_hint"
+            )
+        self.fields["tm1_chart"].choices = chart_ids_and_labels()
+        n = self._resolve_spoke_count()
+        n_half = n // 2
+        wattrs = {"class": "tm1-input", "step": "any", "min": "0"}
+        for i in range(n_half):
+            self.fields[f"left_{i}"] = forms.FloatField(
+                label="",
+                required=True,
+                min_value=0.0,
+                max_value=60.0,
+                widget=forms.NumberInput(attrs=wattrs),
+            )
+            self.fields[f"right_{i}"] = forms.FloatField(
+                label="",
+                required=True,
+                min_value=0.0,
+                max_value=60.0,
+                widget=forms.NumberInput(attrs=wattrs),
+            )
+
+    def _resolve_spoke_count(self) -> int:
+        valid = {c[0] for c in _spoke_count_choices()}
+        if self.is_bound:
+            raw = self.data.get("spoke_count")
+            try:
+                v = int(raw)
+                if v in valid:
+                    return v
+            except (TypeError, ValueError):
+                pass
+        init = getattr(self, "initial", None) or {}
+        if "spoke_count" in init and int(init["spoke_count"]) in valid:
+            return int(init["spoke_count"])
+        return int(self.fields["spoke_count"].initial)
+
+    def clean(self):
+        data = super().clean()
+        if not data:
+            return data
+        n = data.get("spoke_count")
+        chart_id = data.get("tm1_chart")
+        if n is None or not chart_id:
+            return data
+
+        n_half = n // 2
+        readings: list[float] = []
+        for i in range(n_half):
+            for fname in (f"left_{i}", f"right_{i}"):
+                v = data.get(fname)
+                if v is None:
+                    self.add_error(fname, "Enter a TM-1 reading.")
+                    return data
+                readings.append(float(v))
+
+        tensions: list[float] = []
+        for i, v in enumerate(readings):
+            try:
+                tensions.append(tension_kgf(chart_id, v))
+            except TM1LookupError as exc:
+                fname = f"left_{i // 2}" if i % 2 == 0 else f"right_{i // 2}"
+                self.add_error(fname, str(exc))
+                return data
+
+        data["readings_parsed"] = readings
+        data["tensions_kgf"] = tensions
         return data
