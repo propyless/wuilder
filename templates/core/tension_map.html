@@ -8,11 +8,19 @@
 {% block content %}
   <div class="prose">
     <h1>Wheel tension balancing</h1>
-    <p class="lede">Enter a <strong>TM-1</strong> reading per spoke (left / right columns match the Spokes wheel map). We convert to kgf. Set <strong>other side as % of reference</strong> to <strong>100%</strong> for Park style (each side vs its own average), or another value for a <strong>side ratio</strong> (e.g. 84% for non-drive vs drive). The variance limit is ±% from that reference. Spokes outside the band show <strong>↑</strong> / <strong>↓</strong> next to tension and <strong>T</strong> / <strong>L</strong> on the wheel map.</p>
+    <p class="lede">Enter a <strong>TM-1</strong> reading per spoke (left / right columns match the Spokes wheel map). We convert to kgf. Set <strong>other side as % of reference</strong> to <strong>100%</strong> for Park style (each side vs its own average), or another value for a <strong>side ratio</strong> (e.g. 84% for non-drive vs drive). The variance limit is ±% from that reference. Spokes outside the band show <strong>↑</strong> / <strong>↓</strong> next to tension and <strong>T</strong> / <strong>L</strong> on the wheel map. The form is saved in your browser and restored after a refresh (including spoke count).</p>
   </div>
 
   {% with f=form %}
-  <form method="post" class="tension-form-full" novalidate>
+  <form
+    method="post"
+    class="tension-form-full"
+    id="tension-map-form"
+    novalidate
+    data-form-persist-key="wuild.form.tension.v1"
+    data-form-persist-spoke-redirect="1"
+    {% if form_restore_persist %}data-form-persist-restore="1"{% endif %}
+  >
     {% csrf_token %}
     {% if f.non_field_errors %}
       <div class="form-errors">{{ f.non_field_errors }}</div>
@@ -290,10 +298,16 @@
 
 {% block extra_js %}
   <script src="{% static 'js/build_params.js' %}"></script>
+  <script src="{% static 'js/form_persist.js' %}"></script>
   <script>
     (function () {
       var hydrate = {{ hydrate_build_params|yesno:"true,false" }};
       document.addEventListener("DOMContentLoaded", function () {
+        var form = document.getElementById("tension-map-form");
+        var restored = false;
+        if (form && window.WuildFormPersist) {
+          restored = WuildFormPersist.attach(form).restored;
+        }
         if (!window.WuildBuildParams) return;
         var notice = document.getElementById("tension-build-params-notice");
         var applyBtn = document.getElementById("tension-build-params-apply");
@@ -309,7 +323,7 @@
             if (details && !details.open) details.open = true;
           }
         }
-        if (hydrate) tryApply();
+        if (hydrate && !restored) tryApply();
         if (applyBtn) applyBtn.addEventListener("click", tryApply);
         if (clearBtn) {
           clearBtn.addEventListener("click", function () {

@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 from django.shortcuts import render
 
-from .forms import SpokeCalculatorForm, TensionMapForm
+from .forms import SpokeCalculatorForm, TensionMapForm, _spoke_count_choices
 from .hub_geometry import (
     build_hub_side_view_svg,
     build_illustrative_ratio_summary,
@@ -56,7 +56,18 @@ def _tension_side_rows(form, side: str, tension_rows, n_half: int):
 
 
 def tension_map(request):
-    form = TensionMapForm(request.POST or None)
+    initial = {}
+    if request.method == "GET":
+        valid_spokes = {c[0] for c in _spoke_count_choices()}
+        raw = request.GET.get("spoke_count")
+        if raw is not None:
+            try:
+                v = int(raw)
+                if v in valid_spokes:
+                    initial["spoke_count"] = v
+            except ValueError:
+                pass
+    form = TensionMapForm(request.POST or None, initial=initial)
     n_half = form._resolve_spoke_count() // 2
     tension_rows = None
     wheel_svg = None
@@ -181,6 +192,7 @@ def tension_map(request):
             "hub_side_svg": hub_side_svg,
             "illustrative_ratio": illustrative_ratio,
             "hydrate_build_params": request.method == "GET",
+            "form_restore_persist": not form.is_bound,
             "tm1_source_note": chart_source_note(),
         },
     )
@@ -188,7 +200,7 @@ def tension_map(request):
 
 def spoke_calculator(request):
     form = SpokeCalculatorForm(request.POST or None)
-    context = {'form': form}
+    context = {"form": form, "form_restore_persist": not form.is_bound}
 
     if request.method == 'POST' and form.is_valid():
         d = form.cleaned_data

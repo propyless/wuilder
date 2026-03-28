@@ -85,6 +85,15 @@ class GeometryReadyTests(TestCase):
         )
 
 
+class TensionGetSpokeCountTests(TestCase):
+    def test_get_spoke_count_renders_matching_tm1_grid(self):
+        c = Client()
+        r = c.get(reverse("core:tension_map"), {"spoke_count": "12"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'name="left_5"')
+        self.assertNotContains(r, 'name="left_6"')
+
+
 class TensionHubGeometryIntegrationTests(TestCase):
     def test_post_with_hub_fields_renders_diagram_and_illustrative(self):
         c = Client()

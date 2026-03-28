@@ -9,12 +9,19 @@
     <div class="spoke-page-prose prose">
       <h1>Spoke length</h1>
       <p class="lede">ERD, hub PCDs, <strong>left/right flange offsets</strong> (type them in or use the <strong>Flange offset calculator</strong> from overall width and <em>x</em> / <em>y</em>), crosses. Wheel map: <strong>odd</strong> spoke numbers (#1, 3, …) = <strong>left</strong>; <strong>even</strong> (#2, 4, …) = <strong>right</strong> — same order as the tension map.</p>
-      <p class="hint">After building, <a href="{% url 'core:tension_map' %}">plot TM-1 readings</a> in the same spoke order.</p>
+      <p class="hint">After building, <a href="{% url 'core:tension_map' %}">plot TM-1 readings</a> in the same spoke order. Your inputs are saved in the browser and restored after a refresh.</p>
     </div>
 
     <div class="spoke-page-form-col">
       {% with f=form %}
-      <form method="post" class="form-grid spoke-page-form-grid" novalidate>
+      <form
+        method="post"
+        class="form-grid spoke-page-form-grid"
+        id="spoke-calculator-form"
+        novalidate
+        data-form-persist-key="wuild.form.spoke.v1"
+        {% if form_restore_persist %}data-form-persist-restore="1"{% endif %}
+      >
         {% csrf_token %}
         {% if f.non_field_errors %}
           <div class="form-errors">{{ f.non_field_errors }}</div>
@@ -130,6 +137,13 @@
 {% endblock %}
 
 {% block extra_js %}
+  <script src="{% static 'js/form_persist.js' %}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var f = document.getElementById("spoke-calculator-form");
+      if (f && window.WuildFormPersist) WuildFormPersist.attach(f);
+    });
+  </script>
   <script src="{% static 'js/flange_offset_calc.js' %}" defer></script>
   {% if build_params_json %}
     <script type="application/json" id="wuild-build-params-out">{{ build_params_json|safe }}</script>
