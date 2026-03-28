@@ -308,28 +308,38 @@
         if (form && window.WuildFormPersist) {
           restored = WuildFormPersist.attach(form).restored;
         }
-        if (!window.WuildBuildParams) return;
-        var notice = document.getElementById("tension-build-params-notice");
-        var applyBtn = document.getElementById("tension-build-params-apply");
-        var clearBtn = document.getElementById("tension-build-params-clear");
-        var details = document.getElementById("tension-hub-geom-details");
+        if (window.WuildBuildParams) {
+          var notice = document.getElementById("tension-build-params-notice");
+          var applyBtn = document.getElementById("tension-build-params-apply");
+          var clearBtn = document.getElementById("tension-build-params-clear");
+          var details = document.getElementById("tension-hub-geom-details");
 
-        function showNotice() {
-          if (notice) notice.hidden = false;
-        }
-        function tryApply() {
-          if (WuildBuildParams.applyToTensionForm()) {
-            showNotice();
-            if (details && !details.open) details.open = true;
+          function showNotice() {
+            if (notice) notice.hidden = false;
+          }
+          function tryApply() {
+            if (WuildBuildParams.applyToTensionForm()) {
+              showNotice();
+              if (details && !details.open) details.open = true;
+            }
+          }
+          if (hydrate && !restored) tryApply();
+          if (applyBtn) applyBtn.addEventListener("click", tryApply);
+          if (clearBtn) {
+            clearBtn.addEventListener("click", function () {
+              WuildBuildParams.clear();
+              if (notice) notice.hidden = true;
+            });
           }
         }
-        if (hydrate && !restored) tryApply();
-        if (applyBtn) applyBtn.addEventListener("click", tryApply);
-        if (clearBtn) {
-          clearBtn.addEventListener("click", function () {
-            WuildBuildParams.clear();
-            if (notice) notice.hidden = true;
-          });
+        if (
+          restored &&
+          form &&
+          form.checkValidity &&
+          form.checkValidity() &&
+          typeof form.requestSubmit === "function"
+        ) {
+          form.requestSubmit();
         }
       });
     })();

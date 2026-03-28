@@ -141,7 +141,19 @@
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       var f = document.getElementById("spoke-calculator-form");
-      if (f && window.WuildFormPersist) WuildFormPersist.attach(f);
+      var restored = false;
+      if (f && window.WuildFormPersist) {
+        restored = WuildFormPersist.attach(f).restored;
+      }
+      if (
+        restored &&
+        f &&
+        f.checkValidity &&
+        f.checkValidity() &&
+        typeof f.requestSubmit === "function"
+      ) {
+        f.requestSubmit();
+      }
     });
   </script>
   <script src="{% static 'js/flange_offset_calc.js' %}" defer></script>
