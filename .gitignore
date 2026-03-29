@@ -40,3 +40,7 @@ db.sqlite3-journal
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+
+# Node (static web app)
+web/node_modules/
+web/dist/

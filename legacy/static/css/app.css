@@ -198,12 +198,16 @@ body.page-wide .main {
   vertical-align: middle;
 }
 
-/* Spoke calculator layout: form left, lengths + wheel + detail right (like tension map) */
+/* Spoke calculator layout: form left, lengths + wheel + detail right (like tension map).
+   Avoid 1fr on the form track — it stretches the first column on wide viewports. */
 .spoke-page-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 32rem);
+  grid-template-columns: minmax(0, min(42rem, 100%)) minmax(16rem, min(32rem, 100%));
   gap: 0.75rem 1.5rem;
   align-items: start;
+  justify-content: start;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .spoke-page-prose {
@@ -253,6 +257,7 @@ body.page-wide .main {
 @media (max-width: 56rem) {
   .spoke-page-layout {
     grid-template-columns: 1fr;
+    width: 100%;
   }
 
   .spoke-page-form-col {

@@ -85,6 +85,87 @@ One place for spoke math, rim/nipple geometry sketches, and tension visualizatio
 - **One commit per feature** (or per logical slice: model + migration, page + template, etc.).
 - Message style: imperative, short subject; body only when context helps (`feat:`, `fix:`, `docs:`, `chore:`).
 
+## Static client port (GitHub Pages) — **planned**
+
+**Objective:** Ship the same wheel-building tools as a **static site** (no Django): all math and TM-1 lookup in the **browser**, deploy to **GitHub Pages** (or any static host).
+
+**Non-goals (v1):** Server auth, multi-user saved builds, Django admin. Optional parts (`Rim` / `Hub` / `Nipple` DB) become **JSON catalogs** or a trimmed UX.
+
+### Recommended stack
+
+| Piece | Suggestion |
+|--------|------------|
+| Build | **Vite** + **TypeScript** |
+| UI | **Vanilla TS** (small app) *or* **React** if you prefer component ergonomics for large forms |
+| Tests | **Vitest** — port numeric cases from `core/tests/test_*.py` |
+| Styling | Port `static/css/app.css` incrementally; CSS variables already help |
+| Deploy | **GitHub Actions**: `vite build` → artifact to `gh-pages` branch or **Pages from Actions**; set `base` in Vite for project Pages URL (`/repo-name/`) |
+
+### Repo layout — **decision: monorepo**
+
+- Put the Vite app under **`wuild/web/`** (own `package.json`, `src/`, `vite.config.ts`). Django stays at repo root for reference until parity.
+- GitHub Pages can publish **`web/dist/`** via Actions (or build into `docs/` if you prefer that convention—Actions is clearer).
+
+### “Hash” routing vs normal paths (GitHub Pages)
+
+GitHub Pages is **only static files**: it does **not** know that `/wuild/tension` should load your SPA. If you use **normal URLs** like `/wuild/tension` (HTML5 **History** API), a **refresh** or **shared link** often returns **404** unless you add a workaround (e.g. duplicate `index.html` as `404.html`, or host elsewhere).
+
+**Hash routing** keeps the “page” in the part of the URL **after `#`**, which the **server never sees**:
+
+| Style | Example URL | Refresh / deep link on Pages |
+|--------|-------------|------------------------------|
+| **Hash** | `https://you.github.io/wuild/#/tension` | Safe: server always serves `index.html`; JS reads `tension` from the hash. |
+| **Path** | `https://you.github.io/wuild/tension` | Needs extra setup (404 → `index.html` trick or `base` + careful hosting). |
+
+So **“hash”** here means **fragment-based routes** (`#/spokes`, `#/tension`), not cryptography. You can switch to path routing later if you add a Pages-friendly fallback.
+
+**Decision — routing:** **Hash routing** (`#/`, `#/spokes`, `#/tension`). Path-style URLs can be revisited later with a Pages SPA fallback if you want cleaner links.
+
+### Python → TypeScript module map
+
+| Source (Django) | Target (client) | Notes |
+|-----------------|-----------------|-------|
+| `core/spoke_length.py` | `src/math/spokeLength.ts` | `buildSpokeResults`, `lacingAngleRad`, `maxCrosses`, flange-offset-from-width helper |
+| `core/hub_geometry.py` | `src/math/hubGeometry.ts` | Side-view numbers + illustrative ratio |
+| `core/tm1.py` + chart data | `src/tm1/` (`lookup.ts`, `chart.json` or generated `chart.ts`) | Export knots/segments once; mirror interpolation + bounds |
+| `core/tension_viz.py` | `src/tension/viz.ts` | Row model, radar paths, band colors, ratio summary types |
+| `core/nipple_fit.py` | `src/math/nippleFit.ts` | Optional v1.5 |
+| `core/section_layout.py` | `src/section/layout.ts` + SVG components | Largest port; defer to Phase D |
+| `static/js/*.js` | Absorb into TS modules (`storage/buildParams`, `storage/formPersist`, `flangeOffsetCalc`) | Same keys (`wuild.*.v1`) for migration |
+
+### Data migration
+
+1. **TM-1:** Script or one-time manual export from `tm1.py` into versioned JSON (schema field for future Park chart updates).
+2. **Parts:** `core/fixtures/demo_parts.json` (or DB dump) → `public/data/parts.json` with shape `{ rims: [], hubs: [], nipples: [] }` for dropdowns.
+3. **Copy / legal:** Keep Park attribution strings as constants (same as templates).
+
+### Routing & UX
+
+- **SPA** with **hash routes:** `#/` (home), `#/spokes`, `#/tension` (adjust names to match UI). Use **`import.meta.env.BASE_URL`** in Vite for **assets** only; the hash carries **in-app navigation**.
+- Replicate **localStorage** behavior: full form persist, build-params handoff, flange calc blob, **auto-submit after restore** (validity + submit when restored state is valid—equivalent to current `requestSubmit` flow).
+
+### Phased rollout (suggested)
+
+1. **Phase S0 — Scaffold:** Vite+TS, lint/format, Vitest empty, GitHub Action deploys `dist/` to Pages; placeholder home.
+2. **Phase S1 — Spoke calculator:** Inputs, validation, length table, plan-view SVG, flange offset calculator, persist + auto-run when valid restored state.
+3. **Phase S2 — Tension:** TM-1 grid (dynamic spoke count), kgf column, variance / ratio modes, heatmap + radar SVG, hub geometry panel, illustrative ratio, persist + `?spoke_count=` equivalent in router query or state.
+4. **Phase S3 — Handoff parity:** `buildParams` mapping spoke → tension fields; clear/load UX; spoke-count mismatch guard.
+5. **Phase S4 — Optional depth:** Static parts catalog UI; rim section + nipple fit (`section_layout`, `nipple_fit`); print-friendly CSS.
+6. **Phase S5 — Cutover:** README “canonical app is static”; Django archived or kept only for data authoring scripts.
+
+### Verification
+
+- For each ported function, carry over **existing Python test vectors** (same numeric inputs/outputs in Vitest).
+- Manual smoke on GitHub Pages URL (base path, refresh, deep link).
+
+### Risks / notes
+
+- **Single source of truth:** Until Django is retired, document which tree is authoritative; prefer **TS-first** once S2 ships to avoid drift.
+- **Bundle size:** Negligible for this app; TM-1 data is small.
+- **i18n:** Out of scope unless you add it later.
+
+---
+
 ## Memory / continuity
 
 - Product decisions and formulas live in **code comments**, **this file**, and **`TODO.md`**—not only in chat.

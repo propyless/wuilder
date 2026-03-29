@@ -42,3 +42,12 @@ Check items off as we complete them. Prefer **one git commit per finished bullet
 - [x] `localStorage` build-params save (spoke page) + load/clear/apply on tension page; optional hub geometry fields on `TensionMapForm`
 - [x] Illustrative geometry-based tension ratio vs measured averages (labeled approximation) + tests (`core/tests/test_hub_geometry.py`)
 - [ ] Optional follow-up: extra hub schematic detail from plan (hub body / PCD circles); spoke-count mismatch warning when stored vs tension grid differ
+
+## Static port — GitHub Pages (see PLAN.md § *Static client port*)
+
+- [ ] **S0:** Vite + TypeScript scaffold, **hash routing** (`#/…`), Vitest, GitHub Actions → Pages (`base` correct for project URL)
+- [ ] **S1:** Spoke calculator parity (math, wheel SVG, flange offset helper, storage, auto-run when restored)
+- [ ] **S2:** Tension map parity (TM-1 data JSON, grid, viz, hub panel, illustrative ratio, storage)
+- [ ] **S3:** Cross-page `buildParams` + spoke-count handling (router query or full reload strategy)
+- [ ] **S4 (optional):** Static parts JSON + rim section / nipple fit; print CSS
+- [ ] **S5:** README cutover; retire or demote Django app in docs
