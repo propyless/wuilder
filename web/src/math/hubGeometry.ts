@@ -1,4 +1,4 @@
-import { buildSpokeResults, type Side } from "./spokeLength";
+import type { Side } from "./spokeLength";
 
 export interface HubSideViewSvg {
   vbW: number;
@@ -57,37 +57,14 @@ export function buildHubSideViewSvg(
   };
 }
 
-export function geometryReadyForRatio(params: {
-  erdMm: number | null | undefined;
-  leftPcdMm: number | null | undefined;
-  rightPcdMm: number | null | undefined;
-  crosses: number | null | undefined;
-  leftOffsetMm: number | null | undefined;
-  rightOffsetMm: number | null | undefined;
-}): boolean {
-  const {
-    erdMm,
-    leftPcdMm,
-    rightPcdMm,
-    crosses,
-    leftOffsetMm,
-    rightOffsetMm,
-  } = params;
-  if (
-    erdMm == null ||
-    leftPcdMm == null ||
-    rightPcdMm == null ||
-    crosses == null ||
-    leftOffsetMm == null ||
-    rightOffsetMm == null
-  ) {
-    return false;
-  }
-  if (erdMm <= 0 || leftPcdMm <= 0 || rightPcdMm <= 0) return false;
-  if (!Number.isFinite(crosses) || crosses < 0) return false;
-  return true;
-}
-
+/**
+ * Equilibrium “other side vs reference” tension % from axial balance with
+ * stiffness ∝ 1/spoke length: T_left·(w_left/L̄_left) ≈ T_right·(w_right/L̄_right).
+ * **w_* must match spoke geometry:** each is the center-plane → flange offset (mm),
+ * same as `flangeOffsetMm` in {@link ./spokeLength.spokeLengthMm}. Swapped L/R
+ * offsets or using end-cap distances without converting explode the ratio (~120–140%
+ * instead of ~84% on a typical rear).
+ */
 export function illustrativeOtherAsPctOfReference(params: {
   referenceSide: Side;
   wLeftMm: number;
@@ -104,74 +81,4 @@ export function illustrativeOtherAsPctOfReference(params: {
     return (100 * (wl * lr)) / (wr * ll);
   }
   return (100 * (wr * ll)) / (wl * lr);
-}
-
-export function sideMeanSpokeLengthsMm(params: {
-  erdMm: number;
-  spokeCount: number;
-  crosses: number;
-  leftFlangeRadiusMm: number;
-  rightFlangeRadiusMm: number;
-  leftFlangeOffsetMm: number;
-  rightFlangeOffsetMm: number;
-  flangeHoleDiameterMm?: number;
-  nippleCorrectionMm?: number;
-  rotationRad?: number;
-}): [number, number] {
-  const spokes = buildSpokeResults(params);
-  const left = spokes.filter((s) => s.side === "left").map((s) => s.lengthMm);
-  const right = spokes.filter((s) => s.side === "right").map((s) => s.lengthMm);
-  if (!left.length || !right.length) {
-    throw new Error("expected both sides populated");
-  }
-  const avgL = left.reduce((a, b) => a + b, 0) / left.length;
-  const avgR = right.reduce((a, b) => a + b, 0) / right.length;
-  return [avgL, avgR];
-}
-
-export interface IllustrativeRatioSummary {
-  referenceSide: Side;
-  otherSide: Side;
-  illustrativeOtherPct: number;
-  measuredOtherAsPctOfRef: number;
-}
-
-export function buildIllustrativeRatioSummary(params: {
-  referenceSide: Side;
-  leftAvgKgf: number;
-  rightAvgKgf: number;
-  wLeftMm: number;
-  wRightMm: number;
-  avgLenLeftMm: number;
-  avgLenRightMm: number;
-}): IllustrativeRatioSummary {
-  const ill = illustrativeOtherAsPctOfReference({
-    referenceSide: params.referenceSide,
-    wLeftMm: params.wLeftMm,
-    wRightMm: params.wRightMm,
-    avgLenLeftMm: params.avgLenLeftMm,
-    avgLenRightMm: params.avgLenRightMm,
-  });
-  if (params.referenceSide === "left") {
-    const mPct =
-      params.leftAvgKgf > 0
-        ? (100 * params.rightAvgKgf) / params.leftAvgKgf
-        : 0;
-    return {
-      referenceSide: "left",
-      otherSide: "right",
-      illustrativeOtherPct: ill,
-      measuredOtherAsPctOfRef: mPct,
-    };
-  }
-  const mPct =
-    params.rightAvgKgf > 0
-      ? (100 * params.leftAvgKgf) / params.rightAvgKgf
-      : 0;
-  return {
-    referenceSide: "right",
-    otherSide: "left",
-    illustrativeOtherPct: ill,
-    measuredOtherAsPctOfRef: mPct,
-  };
 }

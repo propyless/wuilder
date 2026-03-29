@@ -6,6 +6,12 @@ export function lacingAngleRad(crosses: number, totalSpokes: number): number {
   return (2 * Math.PI * crosses) / (totalSpokes / 2);
 }
 
+/**
+ * Classic crossed-spoke length with rim at the origin in the wheel plane.
+ * @param flangeOffsetMm Axial distance (mm) from the **wheel center plane**
+ *   (hub mid-width: halfway between outer hub faces) to this flange’s spoke hole
+ *   circle — not x/y from dropouts unless converted (see {@link flangeOffsetsFromHubOverallWidth}).
+ */
 export function spokeLengthMm(
   erdMm: number,
   flangeRadiusMm: number,
@@ -65,6 +71,51 @@ export function flangeOffsetsFromHubOverallWidth(
 export function maxCrosses(totalSpokes: number): number {
   if (totalSpokes < 4) return 0;
   return Math.max(0, Math.floor((totalSpokes - 1) / 4));
+}
+
+/**
+ * Approximate J-bend head clearance at the flange: arc pitch between holes
+ * × cos(lacing angle), minus effective hole intrusion (common calculator model).
+ * Matches typical wheel-building spreadsheets when hole diameter is hub drilling.
+ */
+export function spokeHeadClearanceApproxMm(params: {
+  flangePcdMm: number;
+  spokeCount: number;
+  crosses: number;
+  flangeHoleDiameterMm: number;
+}): number {
+  const nHalf = params.spokeCount / 2;
+  const pitch = (Math.PI * params.flangePcdMm) / nHalf;
+  const alpha = lacingAngleRad(params.crosses, params.spokeCount);
+  return pitch * Math.cos(alpha) - params.flangeHoleDiameterMm;
+}
+
+/**
+ * Rim entry angle: angle in the wheel plane between the spoke and the rim radius
+ * at the nipple (first spoke of each side: left index 0, right index 1).
+ */
+export function rimEntryAngleDeg(params: {
+  erdMm: number;
+  flangeRadiusMm: number;
+  crosses: number;
+  spokeCount: number;
+  side: Side;
+}): number {
+  const R = params.erdMm / 2;
+  const r = params.flangeRadiusMm;
+  const alpha = lacingAngleRad(params.crosses, params.spokeCount);
+  const rimIndex = params.side === "left" ? 0 : 1;
+  const phi = (2 * Math.PI * rimIndex) / params.spokeCount;
+  const hubPhi = params.side === "left" ? phi - alpha : phi + alpha;
+  const rmx = R * Math.cos(phi);
+  const rmy = R * Math.sin(phi);
+  const hx = r * Math.cos(hubPhi) - rmx;
+  const hy = r * Math.sin(hubPhi) - rmy;
+  const horiz = Math.hypot(hx, hy);
+  if (horiz < 1e-9) return 0;
+  const dot = hx * -Math.cos(phi) + hy * -Math.sin(phi);
+  const c = Math.min(1, Math.max(-1, dot / horiz));
+  return (Math.acos(c) * 180) / Math.PI;
 }
 
 export function buildSpokeResults(params: {

@@ -1240,8 +1240,7 @@ body.page-wide .main {
   font-size: 0.82rem;
 }
 
-.tension-chart-panel .hub-side-view-wrap,
-.tension-chart-panel .tension-illustrative-ratio {
+.tension-chart-panel .hub-side-view-wrap {
   max-width: var(--tension-wheel-figure-width);
   margin-left: auto;
   margin-right: auto;
@@ -1325,19 +1324,3 @@ body.page-wide .main {
   color: var(--fg);
 }
 
-.tension-illustrative-ratio {
-  margin: 0 auto 0.75rem;
-  padding: 0.55rem 0.6rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: rgba(248, 252, 255, 0.9);
-  font-size: 0.86rem;
-  color: var(--muted);
-  line-height: 1.45;
-  box-sizing: border-box;
-}
-
-.tension-illustrative-hint {
-  margin: 0.25rem 0 0.4rem;
-  font-size: 0.78rem;
-}

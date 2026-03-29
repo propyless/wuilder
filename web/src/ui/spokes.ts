@@ -1,5 +1,11 @@
 import nipplesDoc from "../data/nipples.json";
-import { buildSpokeResults, maxCrosses } from "../math/spokeLength";
+import { illustrativeOtherAsPctOfReference } from "../math/hubGeometry";
+import {
+  buildSpokeResults,
+  maxCrosses,
+  rimEntryAngleDeg,
+  spokeHeadClearanceApproxMm,
+} from "../math/spokeLength";
 import { computeNippleFit } from "../section/nippleFit";
 import {
   buildSectionDetail,
@@ -7,6 +13,7 @@ import {
   type NippleLike,
 } from "../section/layout";
 import { renderSectionDetailHtml } from "../section/sectionHtml";
+import { confirmAndClearWheelData } from "../storage/clearWheelSession";
 import { saveBuildParams, type BuildParamsPayload } from "../storage/buildParams";
 import { FORM_SPOKE_KEY } from "../storage/keys";
 import { attachFormPersist, loadFields } from "../storage/formPersist";
@@ -66,17 +73,6 @@ function findNipple(id: string): NippleRow | undefined {
   return NIPPLES.find((n) => n.id === id);
 }
 
-const LENGTH_COLORS = [
-  "#1b6b5c",
-  "#b85c14",
-  "#4a5a9c",
-  "#7a3e6a",
-  "#6b7c3a",
-  "#c44f4f",
-  "#2c6a8f",
-  "#8f4725",
-];
-
 const WHEEL_BSD_MM: Record<string, number> = {
   "700c-29": 622,
   "27.5": 584,
@@ -113,10 +109,9 @@ function flangePanelHtml(): string {
   <summary class="flange-offset-calc-summary">Flange offset calculator (hub width &amp; x, y)</summary>
   <div class="flange-offset-calc-inner">
     <p class="hint">
-      Same convention as many hub sheets: <strong>overall width</strong> is the full span between outer faces (e.g. locknut to locknut).
-      <strong>x</strong> = from the <strong>left</strong> face to the <strong>left</strong> flange (hole circle center);
-      <strong>y</strong> = from the <strong>right</strong> face to the <strong>right</strong> flange.
-      Center plane = midway between those faces. Then <strong>L</strong> = <em>h</em> − <em>x</em>, <strong>R</strong> = <em>h</em> − <em>y</em>, <strong>F</strong> = <em>L</em> + <em>R</em> (flange-to-flange).
+      <strong>Center plane</strong> = halfway between the two outer hub faces (overall width, e.g. O.L.D.). Offsets <strong>L</strong> / <strong>R</strong> are each flange’s distance <strong>from that plane along the axle</strong> to the spoke hole circle — the same <em>w</em> used in spoke length and spoke-tension ratio.
+      <strong>x</strong> = left outer face → left flange; <strong>y</strong> = right outer face → right flange; <strong>h</strong> = half overall width.
+      Then <strong>L</strong> = <em>h</em> − <em>x</em>, <strong>R</strong> = <em>h</em> − <em>y</em>, <strong>F</strong> = <em>L</em> + <em>R</em> (flange-to-flange). Do not type <em>x</em> or <em>y</em> into the offset fields below unless that is what you really mean as center-plane distance (it usually is not).
       When all three inputs are valid, they are saved in your browser (localStorage) for next visit.
     </p>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 130" class="flange-offset-calc-svg" role="img" aria-label="Hub schematic: overall width, center line, x y L R F">
@@ -433,30 +428,47 @@ function renderSpokeResultsToResultsCol(
     nippleCorrectionMm: nip,
   });
 
-  const uniqueLengths = [...new Set(spokes.map((s) => lengthKey(s.lengthMm)))].sort(
-    (a, b) => a - b,
-  );
-  const colorByLength: Record<number, string> = {};
-  uniqueLengths.forEach((ln, i) => {
-    colorByLength[ln] = LENGTH_COLORS[i % LENGTH_COLORS.length];
-  });
-
   const leftSpokes = spokes.filter((s) => s.side === "left");
   const rightSpokes = spokes.filter((s) => s.side === "right");
-  const summary = [
-    {
-      sideLabel: "Left",
-      lengthMm: lengthKey(leftSpokes[0].lengthMm),
-      count: leftSpokes.length,
-      color: colorByLength[lengthKey(leftSpokes[0].lengthMm)],
-    },
-    {
-      sideLabel: "Right",
-      lengthMm: lengthKey(rightSpokes[0].lengthMm),
-      count: rightSpokes.length,
-      color: colorByLength[lengthKey(rightSpokes[0].lengthMm)],
-    },
-  ];
+  const avgLenLeftMm =
+    leftSpokes.reduce((a, s) => a + s.lengthMm, 0) / leftSpokes.length;
+  const avgLenRightMm =
+    rightSpokes.reduce((a, s) => a + s.lengthMm, 0) / rightSpokes.length;
+  const lenLeftStr = lengthKey(avgLenLeftMm).toFixed(1);
+  const lenRightStr = lengthKey(avgLenRightMm).toFixed(1);
+  const headClearLeft = spokeHeadClearanceApproxMm({
+    flangePcdMm: lPcd,
+    spokeCount: sc,
+    crosses,
+    flangeHoleDiameterMm: hole,
+  });
+  const headClearRight = spokeHeadClearanceApproxMm({
+    flangePcdMm: rPcd,
+    spokeCount: sc,
+    crosses,
+    flangeHoleDiameterMm: hole,
+  });
+  const rimEntryLeft = rimEntryAngleDeg({
+    erdMm: erd,
+    flangeRadiusMm: lPcd / 2,
+    crosses,
+    spokeCount: sc,
+    side: "left",
+  });
+  const rimEntryRight = rimEntryAngleDeg({
+    erdMm: erd,
+    flangeRadiusMm: rPcd / 2,
+    crosses,
+    spokeCount: sc,
+    side: "right",
+  });
+  const tensionLeftPctOfRight = illustrativeOtherAsPctOfReference({
+    referenceSide: "right",
+    wLeftMm: lOff,
+    wRightMm: rOff,
+    avgLenLeftMm,
+    avgLenRightMm,
+  });
 
   const payload: BuildParamsPayload = {
     erd_mm: erd,
@@ -564,29 +576,41 @@ function renderSpokeResultsToResultsCol(
   }
 
   if (resultsCol) {
-    const [leftRow, rightRow] = summary;
     resultsCol.innerHTML = `
-      <section class="results prose">
-        <div class="tension-side-averages spoke-page-lengths-card" role="region" aria-label="Spoke lengths by side">
-          <div class="tension-stat-block-title">Spoke lengths</div>
-          <div class="tension-stat-dual">
-            <div class="tension-stat-dual-item tension-stat-dual-left">
-              <span class="tension-stat-side">${leftRow.sideLabel}</span>
-              <span class="tension-stat-num">${leftRow.lengthMm}</span>
-              <span class="tension-stat-unit">mm</span>
-              <span class="spoke-length-meta">${leftRow.count} spokes</span>
-              <span class="swatch spoke-length-swatch" style="background:${leftRow.color}" title="Length group color"></span>
-            </div>
-            <div class="tension-stat-dual-divider" aria-hidden="true"></div>
-            <div class="tension-stat-dual-item tension-stat-dual-right">
-              <span class="tension-stat-side">${rightRow.sideLabel}</span>
-              <span class="tension-stat-num">${rightRow.lengthMm}</span>
-              <span class="tension-stat-unit">mm</span>
-              <span class="spoke-length-meta">${rightRow.count} spokes</span>
-              <span class="swatch spoke-length-swatch" style="background:${rightRow.color}" title="Length group color"></span>
-            </div>
-          </div>
-        </div>
+      <section class="results prose spoke-build-summary" role="region" aria-label="Spoke build summary">
+        <div class="tension-stat-block-title">Build summary</div>
+        <p class="hint spoke-build-summary-hint">Averages per flange side (odd spoke # = left, even = right). Head clearance: hole spacing × cos(lacing angle) − hub hole diameter. Rim entry angle in the wheel plane. <strong>Tension ratio</strong> uses the same center-plane flange offsets as spoke length (see form hints); right = 100% ref., left = target % of right for axial balance (compare with TM-1). Wrong offsets skew this badly.</p>
+        <table class="spoke-build-summary-table">
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col">Left</th>
+              <th scope="col">Right</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Spoke lengths (mm)</th>
+              <td>${lenLeftStr}</td>
+              <td>${lenRightStr}</td>
+            </tr>
+            <tr>
+              <th scope="row">Spoke head clearance (mm)</th>
+              <td>${headClearLeft.toFixed(1)}</td>
+              <td>${headClearRight.toFixed(1)}</td>
+            </tr>
+            <tr>
+              <th scope="row">Rim entry angle (°)</th>
+              <td>${rimEntryLeft.toFixed(1)}</td>
+              <td>${rimEntryRight.toFixed(1)}</td>
+            </tr>
+            <tr>
+              <th scope="row">Spoke tension ratio</th>
+              <td>${tensionLeftPctOfRight.toFixed(0)}%</td>
+              <td>100%</td>
+            </tr>
+          </tbody>
+        </table>
       </section>
       ${sectionPanelsHtml}`;
   }
@@ -663,7 +687,7 @@ export function renderSpokes(container: HTMLElement): void {
     <div class="spoke-page-prose prose">
       <h1>Spoke length</h1>
       <p class="lede">ERD, hub PCDs, <strong>left/right flange offsets</strong> (type them in or use the <strong>Flange offset calculator</strong> from overall width and <em>x</em> / <em>y</em>), crosses. Spoke numbering: <strong>odd</strong> (#1, 3, …) = <strong>left</strong>; <strong>even</strong> (#2, 4, …) = <strong>right</strong> — same order as the tension map.</p>
-      <p class="hint">After building, <a href="#/tension">plot TM-1 readings</a> in the same spoke order. Spoke lengths update as you type when hub and ERD fields are valid. Use <strong>Calculate</strong> to check optional rim/nipple fields and see validation errors.</p>
+      <p class="hint">After building, use <strong>Tension</strong> in the top bar to plot TM-1 readings in the same spoke order. Spoke lengths update as you type when hub and ERD fields are valid. Use <strong>Calculate</strong> to check optional rim/nipple fields and see validation errors. <strong>Clear</strong> wipes autosaved spokes, tension, hub params, and flange calc (named saved builds are kept).</p>
     </div>
     <div class="spoke-page-form-col">
       <form class="form-grid spoke-page-form-grid" id="spoke-calculator-form" novalidate data-form-persist-key="${FORM_SPOKE_KEY}">
@@ -695,6 +719,7 @@ export function renderSpokes(container: HTMLElement): void {
           </div>
         </div>
         ${flangePanelHtml()}
+        <p class="hint field-span">Left / right offsets = distance from <strong>hub center plane</strong> (mid-width) to that flange, same as <strong>L</strong> / <strong>R</strong> above. Rear wheels: non-drive is usually the <strong>larger</strong> offset; drive side the smaller — if those are reversed, tension ratio will read high (~120–140% instead of ~80–90%).</p>
         <div class="field">
           <label for="id_left_flange_offset_mm">Left flange offset (mm)</label>
           <input type="number" name="left_flange_offset_mm" id="id_left_flange_offset_mm" required min="0" max="120" step="any" />
@@ -754,7 +779,8 @@ export function renderSpokes(container: HTMLElement): void {
             </div>
           </div>
         </fieldset>
-        <div class="field field-span">
+        <div class="field field-span spoke-form-actions">
+          <button type="button" class="btn btn--clear btn-clear-session">Clear</button>
           <button type="submit" class="btn">Calculate</button>
         </div>
       </form>
@@ -768,6 +794,10 @@ export function renderSpokes(container: HTMLElement): void {
 
   const form = container.querySelector("#spoke-calculator-form") as HTMLFormElement;
   if (!form) return;
+
+  container.querySelectorAll(".btn-clear-session").forEach((btn) => {
+    btn.addEventListener("click", () => confirmAndClearWheelData());
+  });
 
   const { restored } = attachFormPersist(form, FORM_SPOKE_KEY, {
     restore: true,

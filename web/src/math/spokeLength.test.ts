@@ -4,6 +4,8 @@ import {
   flangeOffsetsFromHubOverallWidth,
   lacingAngleRad,
   maxCrosses,
+  rimEntryAngleDeg,
+  spokeHeadClearanceApproxMm,
   spokeLengthMm,
 } from "./spokeLength";
 
@@ -100,5 +102,31 @@ describe("spokeLength", () => {
     const rightLen = rows.find((s) => s.side === "right")!.lengthMm;
     expect(leftLen).toBeCloseTo(refLength(29.3), 9);
     expect(rightLen).toBeCloseTo(refLength(24.5), 9);
+  });
+
+  it("spoke head clearance and rim entry — rear wheel spreadsheet parity", () => {
+    const clr = spokeHeadClearanceApproxMm({
+      flangePcdMm: 92.6,
+      spokeCount: 32,
+      crosses: 3,
+      flangeHoleDiameterMm: 2.6,
+    });
+    expect(clr).toBeCloseTo(4.36, 1);
+    const angL = rimEntryAngleDeg({
+      erdMm: 599,
+      flangeRadiusMm: 92.6 / 2,
+      crosses: 3,
+      spokeCount: 32,
+      side: "left",
+    });
+    const angR = rimEntryAngleDeg({
+      erdMm: 599,
+      flangeRadiusMm: 92.6 / 2,
+      crosses: 3,
+      spokeCount: 32,
+      side: "right",
+    });
+    expect(angL).toBeCloseTo(8.63, 1);
+    expect(angR).toBeCloseTo(8.63, 1);
   });
 });

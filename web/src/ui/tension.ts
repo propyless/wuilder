@@ -1,15 +1,11 @@
-import {
-  buildHubSideViewSvg,
-  buildIllustrativeRatioSummary,
-  geometryReadyForRatio,
-  sideMeanSpokeLengthsMm,
-} from "../math/hubGeometry";
+import { buildHubSideViewSvg } from "../math/hubGeometry";
 import { maxCrosses } from "../math/spokeLength";
 import {
   applyBuildParamsToTensionForm,
   clearBuildParams,
   loadBuildParams,
 } from "../storage/buildParams";
+import { confirmAndClearWheelData } from "../storage/clearWheelSession";
 import { attachFormPersist, loadFields } from "../storage/formPersist";
 import { FORM_TENSION_KEY } from "../storage/keys";
 import {
@@ -210,6 +206,20 @@ function parseTensionForm(
   return { readings, tensionsKgf, fieldErrors, nonFieldErrors };
 }
 
+function debounceTensionRecompute(
+  fn: () => void,
+  ms: number,
+): () => void {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  return () => {
+    if (t !== undefined) clearTimeout(t);
+    t = setTimeout(() => {
+      t = undefined;
+      fn();
+    }, ms);
+  };
+}
+
 function buildReadingRows(
   nHalf: number,
   fieldErrors: Record<string, string>,
@@ -260,7 +270,7 @@ export function renderTension(container: HTMLElement): void {
   container.innerHTML = `
 <div class="prose">
   <h1>Wheel tension balancing</h1>
-  <p class="lede">Enter a <strong>TM-1</strong> reading per spoke (left / right columns match the Spokes wheel map). We convert to kgf. Set <strong>other side as % of reference</strong> to <strong>100%</strong> for Park style (each side vs its own average), or another value for a <strong>side ratio</strong> (e.g. 84% for non-drive vs drive). The variance limit is ±% from that reference. Spokes outside the band show <strong>↑</strong> / <strong>↓</strong> next to tension and <strong>T</strong> / <strong>L</strong> on the wheel map. The form is saved in your browser and restored after a refresh (including spoke count).</p>
+  <p class="lede">Enter a <strong>TM-1</strong> reading per spoke (left / right columns match the Spokes wheel map). We convert to kgf. The chart updates as you type once every cell has a reading (same idea as live spoke lengths on the Spokes page). Set <strong>other side as % of reference</strong> to <strong>100%</strong> for Park style (each side vs its own average), or another value for a <strong>side ratio</strong> (e.g. 84% for non-drive vs drive). The variance limit is ±% from that reference. Spokes outside the band show <strong>↑</strong> / <strong>↓</strong> next to tension and <strong>T</strong> / <strong>L</strong> on the wheel map. Use <strong>Update</strong> at the bottom to re-check validation and show field errors. The form is saved in your browser and restored after a refresh (including spoke count).</p>
 </div>
 <form class="tension-form-full" id="tension-map-form" novalidate data-form-persist-key="${FORM_TENSION_KEY}">
   <div id="tension-non-field-errors" class="form-errors" style="display:none"></div>
@@ -282,12 +292,6 @@ export function renderTension(container: HTMLElement): void {
         <div class="field">
           <label for="id_variance_percent">Variance limit (%)</label>
           <input type="number" name="variance_percent" id="id_variance_percent" step="any" min="1" max="50" value="20" />
-        </div>
-      </div>
-      <div class="tension-control tension-control-submit">
-        <div class="field tension-submit-field">
-          <span class="tension-submit-label" aria-hidden="true">&#8203;</span>
-          <button type="submit" class="btn tension-update-btn">Update</button>
         </div>
       </div>
     </div>
@@ -335,6 +339,7 @@ export function renderTension(container: HTMLElement): void {
         <button type="button" class="btn tension-build-params-btn" id="tension-build-params-apply">Load saved from Spoke length</button>
         <button type="button" class="btn tension-build-params-btn" id="tension-build-params-clear">Clear saved</button>
       </p>
+      <p class="hint field-span">Offsets = from <strong>hub center plane</strong> (mid O.L.D.) to each flange — same as on the Spokes page (not raw <em>x</em>/<em>y</em> from hub ends unless converted).</p>
       <div class="form-grid tension-hub-geom-grid">
         <div class="field"><label for="id_hub_erd_mm">ERD (mm)</label><input class="hub-geom-input" type="number" name="hub_erd_mm" id="id_hub_erd_mm" step="any" min="200" max="700" /></div>
         <div class="field"><label for="id_hub_crosses">Crosses</label><input class="hub-geom-input" type="number" name="hub_crosses" id="id_hub_crosses" min="0" max="20" step="1" /></div>
@@ -367,16 +372,23 @@ export function renderTension(container: HTMLElement): void {
     </div>
     <div class="tension-chart-panel" id="tension-chart-panel">
       <div class="tension-chart-placeholder wheel-wrap">
-        <p class="hint">Submit the form to see the tension radar and rim heatmap.</p>
+        <p class="hint">Enter every TM-1 reading for a live map, or use <strong>Update</strong> at the bottom to check the form.</p>
       </div>
     </div>
   </div>
   <div class="tension-footer-submit">
-    <button type="submit" class="btn tension-update-btn">Update</button>
+    <div class="tension-footer-actions">
+      <button type="button" class="btn btn--clear tension-clear-btn btn-clear-session">Clear</button>
+      <button type="submit" class="btn tension-update-btn">Update</button>
+    </div>
   </div>
 </form>
 <p class="prose note tm1-attrib">${escapeHtml(chartSourceNote())}</p>
 <p class="prose note">TM-1 readings are comparative, not a lab tensiometer. Verify critical builds against Park’s current chart.</p>`;
+
+  container.querySelectorAll(".btn-clear-session").forEach((btn) => {
+    btn.addEventListener("click", () => confirmAndClearWheelData());
+  });
 
   const form = container.querySelector("#tension-map-form") as HTMLFormElement;
   const chartPanel = container.querySelector("#tension-chart-panel") as HTMLElement;
@@ -415,7 +427,13 @@ export function renderTension(container: HTMLElement): void {
     );
   }
 
-  function computeFromForm(): void {
+  const tensionValidationFromSubmit = { current: false };
+
+  function runTensionFormUpdate(mode: "auto" | "submit"): void {
+    if (mode === "submit") {
+      tensionValidationFromSubmit.current = true;
+    }
+
     nonFieldEl.style.display = "none";
     nonFieldEl.textContent = "";
 
@@ -428,29 +446,50 @@ export function renderTension(container: HTMLElement): void {
       : "left") as "left" | "right";
     const otherPct = parseFloat(String(fd.get("tension_ratio_other_pct")));
 
+    if (Number.isFinite(variancePct)) {
+      updateTableHeaders(variancePct, usesSideRatio(otherPct));
+    }
+
     const parsed = parseTensionForm(form, nSpokes, chartId);
     if (parsed.nonFieldErrors.length) {
       nonFieldEl.textContent = parsed.nonFieldErrors.join(" ");
       nonFieldEl.style.display = "block";
-      rerenderReadingRows(
-        nSpokes,
-        parsed.fieldErrors,
-        null,
-        captureTm1InputValues(form, nSpokes),
-      );
-      chartPanel.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Fix errors and submit again.</p></div>`;
+      if (tensionValidationFromSubmit.current) {
+        rerenderReadingRows(
+          nSpokes,
+          parsed.fieldErrors,
+          null,
+          captureTm1InputValues(form, nSpokes),
+        );
+      }
+      chartPanel.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Fix hub geometry (crosses vs spoke count) and use <strong>Update</strong>.</p></div>`;
+      (container.querySelector("#tension-wta-left") as HTMLElement).innerHTML =
+        "";
+      (container.querySelector("#tension-wta-right") as HTMLElement).innerHTML =
+        "";
       return;
     }
     if (Object.keys(parsed.fieldErrors).length) {
+      if (!tensionValidationFromSubmit.current) {
+        nonFieldEl.style.display = "none";
+        chartPanel.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Enter a TM-1 reading in every cell for a live map (updates as you type).</p></div>`;
+        (container.querySelector("#tension-wta-left") as HTMLElement).innerHTML =
+          "";
+        (container.querySelector("#tension-wta-right") as HTMLElement).innerHTML =
+          "";
+        return;
+      }
       rerenderReadingRows(
         nSpokes,
         parsed.fieldErrors,
         null,
         captureTm1InputValues(form, nSpokes),
       );
-      chartPanel.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Fix errors and submit again.</p></div>`;
+      chartPanel.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Fix the readings above and use <strong>Update</strong>.</p></div>`;
       return;
     }
+
+    tensionValidationFromSubmit.current = false;
 
     const balanceRatio = usesSideRatio(otherPct);
     updateTableHeaders(variancePct, balanceRatio);
@@ -521,60 +560,6 @@ export function renderTension(container: HTMLElement): void {
       hubSvgBlock = hubSideSvgHtml(buildHubSideViewSvg(lo, ro));
     }
 
-    let illHtml = "";
-    const erd = parseFloat(String(fd.get("hub_erd_mm") || ""));
-    const lPcd = parseFloat(String(fd.get("hub_left_flange_pcd_mm") || ""));
-    const rPcd = parseFloat(String(fd.get("hub_right_flange_pcd_mm") || ""));
-    const hx = parseInt(String(fd.get("hub_crosses") || ""), 10);
-    const hHole = parseFloat(String(fd.get("hub_flange_hole_diameter_mm") || "0")) || 0;
-    const hNip = parseFloat(String(fd.get("hub_nipple_correction_mm") || "0")) || 0;
-
-    if (
-      geometryReadyForRatio({
-        erdMm: erd,
-        leftPcdMm: lPcd,
-        rightPcdMm: rPcd,
-        crosses: hx,
-        leftOffsetMm: lo,
-        rightOffsetMm: ro,
-      })
-    ) {
-      try {
-        const [ll, lr] = sideMeanSpokeLengthsMm({
-          erdMm: erd,
-          spokeCount: nSpokes,
-          crosses: hx,
-          leftFlangeRadiusMm: lPcd / 2,
-          rightFlangeRadiusMm: rPcd / 2,
-          leftFlangeOffsetMm: lo,
-          rightFlangeOffsetMm: ro,
-          flangeHoleDiameterMm: hHole,
-          nippleCorrectionMm: hNip,
-          rotationRad: 0,
-        });
-        const ill = buildIllustrativeRatioSummary({
-          referenceSide: refSide,
-          leftAvgKgf: leftAvg,
-          rightAvgKgf: rightAvg,
-          wLeftMm: lo,
-          wRightMm: ro,
-          avgLenLeftMm: ll,
-          avgLenRightMm: lr,
-        });
-        illHtml = `
-          <div class="tension-illustrative-ratio" role="region" aria-label="Illustrative geometry tension ratio">
-            <div class="tension-stat-block-title">Illustrative geometry ratio</div>
-            <p class="hint tension-illustrative-hint">From hub offsets and mean spoke lengths (axial balance model). <strong>Not a guarantee</strong> — compare to your measured averages below.</p>
-            <dl class="tension-ratio-dl">
-              <div class="tension-ratio-row"><dt>Illustrative ${ill.otherSide} vs ${ill.referenceSide} ref</dt><dd><span class="tension-ratio-em">${ill.illustrativeOtherPct.toFixed(1)}%</span></dd></div>
-              <div class="tension-ratio-row"><dt>Measured ${ill.otherSide} vs ${ill.referenceSide} ref</dt><dd><span class="tension-ratio-em">${ill.measuredOtherAsPctOfRef.toFixed(1)}%</span></dd></div>
-            </dl>
-          </div>`;
-      } catch {
-        /* */
-      }
-    }
-
     const spokeLines = tensionRows
       .map(
         (row) =>
@@ -608,7 +593,6 @@ export function renderTension(container: HTMLElement): void {
       </div>
       ${ratioSummaryHtml}
       ${hubSvgBlock}
-      ${illHtml}
       <div class="wheel-wrap tension-radar-wrap">
         <div class="tension-stat-block-title">Tension radar</div>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Tension radar">
@@ -640,21 +624,29 @@ export function renderTension(container: HTMLElement): void {
 
   const { restored } = attachFormPersist(form, FORM_TENSION_KEY, { restore: true });
 
-  const scSel = form.querySelector("#id_spoke_count") as HTMLSelectElement;
-  scSel.addEventListener("change", () => {
-    const v = parseInt(scSel.value, 10);
-    if (Number.isFinite(v)) {
-      rerenderReadingRows(v, {}, null, {});
-      chartPanel.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Submit the form to see the tension radar and rim heatmap.</p></div>`;
-      (container.querySelector("#tension-wta-left") as HTMLElement).innerHTML = "";
-      (container.querySelector("#tension-wta-right") as HTMLElement).innerHTML = "";
-      updateTableHeaders(20, false);
+  const scheduleTensionRecompute = debounceTensionRecompute(
+    () => runTensionFormUpdate("auto"),
+    320,
+  );
+
+  form.addEventListener("change", (e) => {
+    const t = e.target as HTMLElement;
+    if (t.id === "id_spoke_count") {
+      const v = parseInt((t as HTMLSelectElement).value, 10);
+      if (Number.isFinite(v)) {
+        rerenderReadingRows(v, {}, null, {});
+      }
     }
+    scheduleTensionRecompute();
+  });
+
+  form.addEventListener("input", () => {
+    scheduleTensionRecompute();
   });
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    computeFromForm();
+    runTensionFormUpdate("submit");
   });
 
   const notice = container.querySelector("#tension-build-params-notice") as HTMLElement;
@@ -666,6 +658,7 @@ export function renderTension(container: HTMLElement): void {
     if (applyBuildParamsToTensionForm()) {
       notice.hidden = false;
       hubDetails.open = true;
+      scheduleTensionRecompute();
     }
   });
   clearBp?.addEventListener("click", () => {
@@ -673,13 +666,15 @@ export function renderTension(container: HTMLElement): void {
     notice.hidden = true;
   });
 
-  if (!restored && loadBuildParams()) {
-    if (applyBuildParamsToTensionForm()) {
-      notice.hidden = false;
-    }
+  const bp = loadBuildParams();
+  if (bp) {
+    const filled = restored
+      ? applyBuildParamsToTensionForm({ onlyIfEmpty: true, hubGeomOnly: true })
+      : applyBuildParamsToTensionForm();
+    if (filled) notice.hidden = false;
   }
 
-  if (restored && form.checkValidity()) {
-    computeFromForm();
+  if (restored) {
+    runTensionFormUpdate("auto");
   }
 }

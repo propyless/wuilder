@@ -25,6 +25,29 @@ const TENSION_MAP: Record<string, string> = {
   nipple_correction_mm: "hub_nipple_correction_mm",
 };
 
+/** Maps to optional hub/rim block only (tension spoke count stays on the tension form). */
+const HUB_GEOM_PARAM_KEYS = [
+  "erd_mm",
+  "crosses",
+  "left_flange_diameter_mm",
+  "right_flange_diameter_mm",
+  "left_flange_offset_mm",
+  "right_flange_offset_mm",
+  "flange_hole_diameter_mm",
+  "nipple_correction_mm",
+] as const;
+
+export interface ApplyBuildParamsOptions {
+  /**
+   * Only set when the control’s current value is blank. Use after a full
+   * tension restore so hub geometry can be filled from Spoke length storage
+   * without clobbering other persisted fields.
+   */
+  onlyIfEmpty?: boolean;
+  /** Apply hub/rim inputs only; does not change tension spoke count. */
+  hubGeomOnly?: boolean;
+}
+
 export function saveBuildParams(payload: BuildParamsPayload): void {
   const body = { schema: BUILD_PARAMS_SCHEMA, ...payload };
   try {
@@ -54,22 +77,37 @@ export function clearBuildParams(): void {
   }
 }
 
-function setById(id: string, value: string | number | undefined): void {
-  if (value === undefined || value === null) return;
-  const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
-  if (!el) return;
-  el.value = String(value);
+function tensionFieldLooksEmpty(
+  el: HTMLInputElement | HTMLSelectElement,
+): boolean {
+  return String(el.value ?? "").trim() === "";
 }
 
 /** Apply saved spoke build params to tension form fields (by id). */
-export function applyBuildParamsToTensionForm(): boolean {
+export function applyBuildParamsToTensionForm(
+  options?: ApplyBuildParamsOptions,
+): boolean {
   const o = loadBuildParams();
   if (!o) return false;
+  const onlyIfEmpty = options?.onlyIfEmpty ?? false;
+  const hubGeomOnly = options?.hubGeomOnly ?? false;
+  const keys: readonly string[] = hubGeomOnly
+    ? HUB_GEOM_PARAM_KEYS
+    : Object.keys(TENSION_MAP);
   let applied = false;
-  for (const k of Object.keys(TENSION_MAP)) {
+  for (const k of keys) {
     if (!Object.prototype.hasOwnProperty.call(o, k)) continue;
-    const tid = `id_${TENSION_MAP[k]}`;
-    setById(tid, (o as unknown as Record<string, unknown>)[k] as string | number);
+    const formField = TENSION_MAP[k];
+    if (!formField) continue;
+    const el = document.getElementById(`id_${formField}`) as
+      | HTMLInputElement
+      | HTMLSelectElement
+      | null;
+    if (!el) continue;
+    if (onlyIfEmpty && !tensionFieldLooksEmpty(el)) continue;
+    const val = (o as unknown as Record<string, unknown>)[k];
+    if (val === undefined || val === null) continue;
+    el.value = String(val);
     applied = true;
   }
   return applied;

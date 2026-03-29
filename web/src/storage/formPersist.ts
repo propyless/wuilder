@@ -33,12 +33,43 @@ export function saveFields(key: string, fields: Record<string, string>): void {
   }
 }
 
+/**
+ * Serializes all named, enabled fields under the form. Uses the DOM instead of
+ * `new FormData(form)` so values inside a closed `<details>` (e.g. tension hub
+ * geometry) are still persisted — some browsers omit those from FormData.
+ */
 export function captureForm(form: HTMLFormElement): Record<string, string> {
-  const fd = new FormData(form);
   const fields: Record<string, string> = {};
-  fd.forEach((v, k) => {
-    fields[k] = String(v);
-  });
+  form
+    .querySelectorAll<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >("input[name], select[name], textarea[name]")
+    .forEach((el) => {
+      if (el.disabled) return;
+      const name = el.getAttribute("name");
+      if (!name) return;
+      if (el instanceof HTMLInputElement) {
+        const t = el.type;
+        if (
+          t === "submit" ||
+          t === "button" ||
+          t === "reset" ||
+          t === "image" ||
+          t === "file"
+        ) {
+          return;
+        }
+        if (t === "radio") {
+          if (el.checked) fields[name] = el.value;
+          return;
+        }
+        if (t === "checkbox") {
+          fields[name] = el.checked ? el.value || "on" : "";
+          return;
+        }
+      }
+      fields[name] = el.value;
+    });
   return fields;
 }
 

@@ -5,3 +5,5 @@ export const FLANGE_CALC_KEY = "wuild.flangeCalc.v1";
 export const FORM_SCHEMA = 1;
 export const BUILD_PARAMS_SCHEMA = 1;
 export const FLANGE_CALC_SCHEMA = 1;
+export const SAVED_BUILDS_KEY = "wuild.savedBuilds.v1";
+export const SAVED_BUILDS_SCHEMA = 1;
