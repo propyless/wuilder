@@ -13,6 +13,7 @@ import {
   type NippleLike,
 } from "../section/layout";
 import { renderSectionDetailHtml } from "../section/sectionHtml";
+import { escapeAttr } from "../util/escape";
 import { confirmAndClearWheelData } from "../storage/clearWheelSession";
 import { saveBuildParams, type BuildParamsPayload } from "../storage/buildParams";
 import { FORM_SPOKE_KEY } from "../storage/keys";
@@ -22,6 +23,7 @@ import {
   loadFlangeCalcInputs,
   runFlangeCalc,
 } from "../storage/flangeCalc";
+import { spokeOptions } from "./spokeOptions";
 
 interface NippleRow extends NippleLike {
   id: string;
@@ -62,13 +64,6 @@ function nippleSelectOptions(selectedId: string): string {
   return opts.join("");
 }
 
-function escapeAttr(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/"/g, "&quot;");
-}
-
 function findNipple(id: string): NippleRow | undefined {
   return NIPPLES.find((n) => n.id === id);
 }
@@ -86,16 +81,6 @@ function wheelSizeOptions(selected: string): string {
     `<option value="27.5"${selected === "27.5" ? " selected" : ""}>27.5&quot; (BSD 584)</option>`,
     `<option value="26"${selected === "26" ? " selected" : ""}>26&quot; (BSD 559)</option>`,
   ];
-  return opts.join("");
-}
-
-function spokeOptions(selected: number): string {
-  const opts: string[] = [];
-  for (let n = 12; n <= 52; n += 2) {
-    opts.push(
-      `<option value="${n}"${n === selected ? " selected" : ""}>${n}</option>`,
-    );
-  }
   return opts.join("");
 }
 

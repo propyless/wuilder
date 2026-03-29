@@ -6,14 +6,7 @@ import {
   getSavedBuild,
   listSavedBuilds,
 } from "../storage/savedBuilds";
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+import { escapeHtml } from "../util/escape";
 
 function formatWhen(iso: string): string {
   try {
