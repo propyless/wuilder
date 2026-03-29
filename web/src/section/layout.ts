@@ -57,6 +57,18 @@ export function buildSectionLayout(
     nippleCorrectionMm?: number;
   },
 ): SectionDiagram {
+  /*
+    Section view coordinate frame (SVG):
+
+         -X                +X
+          <------ cx ------>          Y grows downward
+                    |
+                    v +Y
+
+    Main anchors:
+      nipple = (cx, nippleY) on rim seat line
+      flange = (cx +/- offsetMm*s, nippleY + planarChordMm*s)
+  */
   const s = 0.38;
   const cx = 210.0;
   const flangeHoleDiameterMm = params.flangeHoleDiameterMm ?? 0;
@@ -86,6 +98,22 @@ export function buildSectionLayout(
   const spokeL =
     raw - flangeHoleDiameterMm / 2.0 + nippleCorrectionMm;
 
+  /*
+    Spoke section triangle (right triangle in projected section):
+
+          nipple
+            *
+            |\
+            | \ spokeL
+            |  \
+  planar    |   \
+  chord     |    \
+            *-----* flange projection
+               w = flange offset
+
+    planarChordMm^2 + w^2 = spokeL^2
+    planarChordMm = sqrt(max(spokeL^2 - w^2, 0))
+  */
   const w = offsetMm;
   const underChord = spokeL * spokeL - w * w;
   const planarChordMm = Math.sqrt(Math.max(underChord, 0.0));
@@ -112,6 +140,16 @@ export function buildSectionLayout(
   const xInL = cx - innerW / 2;
   const xInR = cx + innerW / 2;
 
+  /*
+    Rim simple section (clockwise polygon):
+
+      xOutL ---------------------- xOutR   y = yRimTop
+         \                        /
+          \                      /
+      xInL ---------------------- xInR    y = nippleY (seat line)
+
+    Path order: top-left -> top-right -> inner-right -> inner-left -> close.
+  */
   const rimPath =
     `M ${xOutL.toFixed(2)} ${yRimTop.toFixed(2)} L ${xOutR.toFixed(2)} ${yRimTop.toFixed(2)} ` +
     `L ${xInR.toFixed(2)} ${nippleY.toFixed(2)} L ${xInL.toFixed(2)} ${nippleY.toFixed(2)} Z`;
@@ -121,6 +159,7 @@ export function buildSectionLayout(
   const headLeft = nippleX - headW / 2;
   const headTop = nippleY - headH;
   const headBottom = nippleY;
+  // Nipple head is a rectangle centered on nippleX, spanning [headTop, headBottom].
   const nippleHeadPath =
     `M ${headLeft.toFixed(2)} ${headTop.toFixed(2)} ` +
     `L ${(headLeft + headW).toFixed(2)} ${headTop.toFixed(2)} ` +
@@ -133,12 +172,14 @@ export function buildSectionLayout(
   const shankR = nippleX + shankW / 2;
   const bodyTop = nippleY;
   const bodyBot = nippleY + bodyLen;
+  // Nipple body/barrel is a centered rectangle that extends downward from seat.
   const nippleBodyPath =
     `M ${shankL.toFixed(2)} ${bodyTop.toFixed(2)} L ${shankR.toFixed(2)} ${bodyTop.toFixed(2)} ` +
     `L ${shankR.toFixed(2)} ${bodyBot.toFixed(2)} L ${shankL.toFixed(2)} ${bodyBot.toFixed(2)} Z`;
 
   const threadLenPx = nipple.internalThreadLengthMm * s;
   const threadBot = Math.min(bodyTop + threadLenPx, bodyBot);
+  // Thread zone starts at seat/bodyTop and is clamped to body length.
   const nippleThreadZonePath =
     `M ${shankL.toFixed(2)} ${bodyTop.toFixed(2)} L ${shankR.toFixed(2)} ${bodyTop.toFixed(2)} ` +
     `L ${shankR.toFixed(2)} ${threadBot.toFixed(2)} L ${shankL.toFixed(2)} ${threadBot.toFixed(2)} Z`;
@@ -209,6 +250,23 @@ export function buildSectionDetail(
     innerWallDepthMm?: number | null;
   },
 ): SectionDetail {
+  /*
+    Detail view stack (not to scale):
+
+      rimOuterY  --------------------  outer crown
+                   \                /
+      seatY      --------------------  nipple seat plane
+                     [head]
+                      |  |
+                      |  |  nipple body
+                      |  |
+      barrelEndY  --------------------  barrel end
+      tipY        ---- spoke tip ----
+
+    This function builds two rim paths:
+      1) rimPath (solid metal)
+      2) rimCavityPath (painted cutout overlay)
+  */
   const spokeThreadLengthMm = params.spokeThreadLengthMm ?? 0;
   const totalMm = params.wellDepthMm + nipple.bodyLengthMm;
   const paddingMm = totalMm * 0.16;
@@ -249,7 +307,21 @@ export function buildSectionDetail(
     `M ${shankL.toFixed(2)} ${seatY.toFixed(2)} L ${shankR.toFixed(2)} ${seatY.toFixed(2)} ` +
     `L ${shankR.toFixed(2)} ${threadBot.toFixed(2)} L ${shankL.toFixed(2)} ${threadBot.toFixed(2)} Z`;
 
-  // -- Rim profile (matches legacy/core/section_layout.py exactly) --
+  /*
+    Rim profile guide points:
+
+      xOutL                       xOutR
+        |---------------------------|  rimOuterY
+        |     hook / transition     |
+      xInL                       xInR  inner walls
+           \        U-bed       /
+            \______  cx  ______/
+                  seatY / uBotY
+
+    Curves:
+      Q = quarter-round at top outer corners (radius r)
+      C = smooth hook transition + U-bed crown
+  */
   const innerW = params.innerWidthMm * s;
   const lipMm = Math.min(3.0, params.innerWidthMm * 0.1);
   const lip = lipMm * s;
@@ -259,7 +331,7 @@ export function buildSectionDetail(
   const xInL = cx - innerW / 2;
   const xInR = cx + innerW / 2;
 
-  const wellPx = seatY - rimOuterY;
+  const wellPx = seatY - rimOuterY ;
   const hookH = Math.min(3.5 * s, wellPx * 0.14);
   const hookY = rimOuterY + hookH;
   const trans = Math.min(lip * 1.6, wellPx * 0.10);
@@ -274,6 +346,18 @@ export function buildSectionDetail(
 
   const hasIwd = params.innerWallDepthMm != null;
 
+  /*
+    rimPath command walk (clockwise):
+      M/L top edge with corner radius lead-in
+      Q top-right round
+      L down right wall
+      C hook transition into inner wall
+      L down to bend
+      C through U-bottom center
+      mirrored C/L/C/L on left
+      Q top-left round
+      Z close
+  */
   const rimPath =
     `M ${(xOutL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
     `L ${(xOutR - r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
@@ -297,7 +381,14 @@ export function buildSectionDetail(
     `Q ${xOutL.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xOutL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
     "Z";
 
-  // -- Cavity (separate path, painted on top of rim — no even-odd) --
+  /*
+    Cavity is its own filled path layered on top (no even-odd fill rule).
+
+    Thickness model:
+      sideT  = side wall thickness
+      innerT = material left above seat
+      cavTopY/cavBotY define vertical cavity window
+  */
   const sideTMm = Math.max(1.2, params.wellDepthMm * 0.07);
   const sideT = sideTMm * s;
 
@@ -323,6 +414,14 @@ export function buildSectionDetail(
 
   let rimCavityPath: string;
   if (hasIwd) {
+    /*
+      Inner-wall-depth constrained cavity (rounded rectangle):
+
+         cavL +-------------------+ cavR   cavTopY
+              |                   |
+              |                   |
+              +-------------------+         cavBotY
+    */
     rimCavityPath =
       `M ${(cavL + cr).toFixed(2)} ${cavTopY.toFixed(2)} ` +
       `L ${(cavR - cr).toFixed(2)} ${cavTopY.toFixed(2)} ` +
@@ -335,6 +434,15 @@ export function buildSectionDetail(
       `Q ${cavL.toFixed(2)} ${cavTopY.toFixed(2)} ${(cavL + cr).toFixed(2)} ${cavTopY.toFixed(2)} ` +
       "Z";
   } else {
+    /*
+      Default cavity follows the U-bed shape:
+
+          cavL                 cavR
+            |-------------------|    cavTopY
+            |                   |
+             \                 /
+              \_____ cx _____/      cavUBot
+    */
     const cavBendY = bendY + sideT;
     const cavUHalf = uHalf - sideT * 0.5;
     const cavUBot = uBotY - sideT;
