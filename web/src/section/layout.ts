@@ -132,26 +132,23 @@ export function buildSectionLayout(
 
   const innerW = rim.innerWidthMm * s;
   const wellD = rim.wellDepthMm * s;
-  const lip = Math.max(5.0 * s, innerW * 0.06);
 
   const yRimTop = nippleY - wellD;
-  const xOutL = cx - innerW / 2 - lip;
-  const xOutR = cx + innerW / 2 + lip;
   const xInL = cx - innerW / 2;
   const xInR = cx + innerW / 2;
 
   /*
-    Rim simple section (clockwise polygon):
+    Rim simple section (straight walls, clockwise rectangle):
 
-      xOutL ---------------------- xOutR   y = yRimTop
-         \                        /
-          \                      /
-      xInL ---------------------- xInR    y = nippleY (seat line)
+      xInL  |----------------------|  xInR   y = yRimTop
+            |                      |
+            |                      |
+      xInL  |----------------------|  xInR   y = nippleY (seat line)
 
-    Path order: top-left -> top-right -> inner-right -> inner-left -> close.
+    Path order: top-left -> top-right -> bottom-right -> bottom-left -> close.
   */
   const rimPath =
-    `M ${xOutL.toFixed(2)} ${yRimTop.toFixed(2)} L ${xOutR.toFixed(2)} ${yRimTop.toFixed(2)} ` +
+    `M ${xInL.toFixed(2)} ${yRimTop.toFixed(2)} L ${xInR.toFixed(2)} ${yRimTop.toFixed(2)} ` +
     `L ${xInR.toFixed(2)} ${nippleY.toFixed(2)} L ${xInL.toFixed(2)} ${nippleY.toFixed(2)} Z`;
 
   const headW = nipple.headDiameterMm * s;
@@ -308,34 +305,26 @@ export function buildSectionDetail(
     `L ${shankR.toFixed(2)} ${threadBot.toFixed(2)} L ${shankL.toFixed(2)} ${threadBot.toFixed(2)} Z`;
 
   /*
-    Rim profile guide points:
+    Rim profile guide points (straight side walls):
 
-      xOutL                       xOutR
+      xInL                       xInR
         |---------------------------|  rimOuterY
-        |     hook / transition     |
-      xInL                       xInR  inner walls
-           \        U-bed       /
-            \______  cx  ______/
+        |                           |
+        |                           |
+        |         U-bed             |
+         \_________ cx ____________/
                   seatY / uBotY
 
     Curves:
-      Q = quarter-round at top outer corners (radius r)
-      C = smooth hook transition + U-bed crown
+      Q = quarter-round at top corners (radius r)
+      C = smooth U-bed crown
   */
   const innerW = params.innerWidthMm * s;
-  const lipMm = Math.min(3.0, params.innerWidthMm * 0.1);
-  const lip = lipMm * s;
-
-  const xOutL = cx - (innerW / 2 + lip);
-  const xOutR = cx + (innerW / 2 + lip);
   const xInL = cx - innerW / 2;
   const xInR = cx + innerW / 2;
 
-  const wellPx = seatY - rimOuterY ;
-  const hookH = Math.min(3.5 * s, wellPx * 0.14);
-  const hookY = rimOuterY + hookH;
-  const trans = Math.min(lip * 1.6, wellPx * 0.10);
-  const r = Math.min(2.5 * s, wellPx * 0.06, lip * 0.9);
+  const wellPx = seatY - rimOuterY;
+  const r = Math.min(2.5 * s, wellPx * 0.06, innerW * 0.08);
 
   const uExtMm = Math.max(1.5, params.wellDepthMm * 0.09);
   const uExt = uExtMm * s;
@@ -351,21 +340,15 @@ export function buildSectionDetail(
       M/L top edge with corner radius lead-in
       Q top-right round
       L down right wall
-      C hook transition into inner wall
-      L down to bend
       C through U-bottom center
-      mirrored C/L/C/L on left
+      mirrored C/L on left
       Q top-left round
       Z close
   */
   const rimPath =
-    `M ${(xOutL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
-    `L ${(xOutR - r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
-    `Q ${xOutR.toFixed(2)} ${rimOuterY.toFixed(2)} ${xOutR.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
-    `L ${xOutR.toFixed(2)} ${hookY.toFixed(2)} ` +
-    `C ${xOutR.toFixed(2)} ${(hookY + trans * 0.5).toFixed(2)} ` +
-    `${xInR.toFixed(2)} ${(hookY + trans * 0.5).toFixed(2)} ` +
-    `${xInR.toFixed(2)} ${(hookY + trans).toFixed(2)} ` +
+    `M ${(xInL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `L ${(xInR - r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `Q ${xInR.toFixed(2)} ${rimOuterY.toFixed(2)} ${xInR.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
     `L ${xInR.toFixed(2)} ${bendY.toFixed(2)} ` +
     `C ${xInR.toFixed(2)} ${seatY.toFixed(2)} ` +
     `${(cx + uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
@@ -373,12 +356,8 @@ export function buildSectionDetail(
     `C ${(cx - uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
     `${xInL.toFixed(2)} ${seatY.toFixed(2)} ` +
     `${xInL.toFixed(2)} ${bendY.toFixed(2)} ` +
-    `L ${xInL.toFixed(2)} ${(hookY + trans).toFixed(2)} ` +
-    `C ${xInL.toFixed(2)} ${(hookY + trans * 0.5).toFixed(2)} ` +
-    `${xOutL.toFixed(2)} ${(hookY + trans * 0.5).toFixed(2)} ` +
-    `${xOutL.toFixed(2)} ${hookY.toFixed(2)} ` +
-    `L ${xOutL.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
-    `Q ${xOutL.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xOutL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `L ${xInL.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
+    `Q ${xInL.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xInL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
     "Z";
 
   /*
