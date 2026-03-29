@@ -1,53 +1,28 @@
-# wuild — task list
+# wuild — TODO
 
-Check items off as we complete them. Prefer **one git commit per finished bullet** (or tightly related pair).
+Prefer **one commit per finished bullet** (or a tightly related pair).
 
-## Setup & docs
+## Next (highest value)
 
-- [x] Add `PLAN.md`, `TODO.md`, and Python `.gitignore`
-- [x] Initialize git repository and initial commit
+- [ ] **Spoke count vs storage:** If `buildParams` (or last spoke form) spoke count ≠ tension grid count, show a clear warning and/or one-click align—see tension handoff UX.
+- [ ] **Docs sweep:** Ensure root `README.md` stays the entry point (env vars, `web/` vs `legacy/`, CI/Pages). Trim duplication with `PLAN.md` instead of repeating full runbooks in both.
 
-## Phase 1 — Foundation
+## Polish
 
-- [x] Create Python virtual environment and pin dependencies (`requirements.txt` or `pyproject.toml`)
-- [x] Create Django project and core app (settings, URLs, `templates/`, `static/`)
-- [x] Base template + simple home page
+- [ ] **Tension hub panel:** Optional richer side-view schematic (hub body / PCD hints) while keeping “illustrative, not measured” copy.
+- [ ] **Print / export:** Print-friendly CSS for summaries or diagrams (static app).
+- [ ] **Test parity:** Spot-check critical paths against `legacy/core/tests/` and add Vitest cases where gaps show up.
 
-## Phase 2 — Spoke length
+## Optional / later
 
-- [x] Spoke length calculator: form, validation, calculation module
-- [x] Results page/table
-- [x] Wheel plan SVG (spoke positions / length groups)
+- [ ] **Saved builds:** Extend or simplify named saved builds in `web/` (UX + storage limits).
+- [ ] **Parts catalog:** Broader static JSON for rims/hubs if you outgrow nipples-only presets.
+- [ ] **`section/layout.ts`:** Split or document submodules if the file keeps growing (geometry vs SVG vs public API).
 
-## Phase 3 — Rim / hub / nipple
+## Legacy (`legacy/`)
 
-- [x] Models: `Rim`, `Hub`, `Nipple`
-- [x] Migrations + admin registration
-- [x] Cross-section SVG (rim + nipple + spoke to flange); fixture `demo_parts`
+- [ ] Keep Django runnable for regression comparison until you explicitly retire it; update `PLAN.md` / `README.md` if the folder role changes.
 
-## Phase 4 — Tension
+---
 
-- [x] Park TM-1 conversion data (per spoke diameter) as fixtures or code
-- [x] Tension input UI + deviation metrics
-- [x] Tension heatmap SVG (rim with per-spoke colors + legend)
-
-## Phase 5 — Polish
-
-- [ ] README: env vars, contributing (run locally + tests: see README.md)
-- [ ] Optional: saved builds / sessions
-
-## Tension + hub offsets (see PLAN.md § *Tension page — hub offset context*)
-
-- [x] Side-view SVG on tension page from left/right flange offsets (center plane + flanges)
-- [x] `localStorage` build-params save (spoke page) + load/clear/apply on tension page; optional hub geometry fields on `TensionMapForm`
-- [x] Illustrative geometry-based tension ratio vs measured averages (labeled approximation) + tests (`core/tests/test_hub_geometry.py`)
-- [ ] Optional follow-up: extra hub schematic detail from plan (hub body / PCD circles); spoke-count mismatch warning when stored vs tension grid differ
-
-## Static port — GitHub Pages (see PLAN.md § *Static client port*)
-
-- [ ] **S0:** Vite + TypeScript scaffold, **hash routing** (`#/…`), Vitest, GitHub Actions → Pages (`base` correct for project URL)
-- [ ] **S1:** Spoke calculator parity (math, wheel SVG, flange offset helper, storage, auto-run when restored)
-- [ ] **S2:** Tension map parity (TM-1 data JSON, grid, viz, hub panel, illustrative ratio, storage)
-- [ ] **S3:** Cross-page `buildParams` + spoke-count handling (router query or full reload strategy)
-- [ ] **S4 (optional):** Static parts JSON + rim section / nipple fit; print CSS
-- [ ] **S5:** README cutover; retire or demote Django app in docs
+**Baseline (no checkbox needed):** Static app scaffold, spokes + tension + builds pages, TM-1 data, build-params handoff, flange offset helper, rim section + nipple fit, Vitest + ESLint + Prettier, CSS partials, GitHub Actions → Pages.
