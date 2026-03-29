@@ -429,20 +429,65 @@ export function buildSectionDetail(
     Math.max(topCutBotY - rimOuterY, 1.0) * 0.22,
     Math.max(topCutR - topCutL, 1.0) * 0.10,
   );
+  const hookDepth = Math.min(
+    2.6 * s,
+    Math.max(topCutR - topCutL, 1.0) * 0.10,
+  );
+  // Hook starts at the very top edge and returns after a few mm.
+  const hookTopY = rimOuterY;
+  const hookDropPx = Math.min(
+    2.8 * s,
+    Math.max(1.8 * s, (topCutBotY - rimOuterY) * 0.22),
+  );
+  const hookBotY = Math.min(
+    rimOuterY + hookDropPx,
+    topCutBotY - Math.max(topCutRounding * 1.4, 0.8 * s),
+  );
+  const hookMidY = (hookTopY + hookBotY) / 2;
+  const hookCtrlY1 = hookTopY + (hookBotY - hookTopY) * 0.24;
+  const hookCtrlY2 = hookMidY + (hookBotY - hookTopY) * 0.24;
   const rimTopCutoutPath =
     `M ${topCutL.toFixed(2)} ${rimOuterY.toFixed(2)} ` +
     `L ${topCutR.toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `L ${topCutR.toFixed(2)} ${hookTopY.toFixed(2)} ` +
+    `C ${topCutR.toFixed(2)} ${hookCtrlY1.toFixed(2)} ` +
+    `${(topCutR - hookDepth).toFixed(2)} ${hookCtrlY1.toFixed(2)} ` +
+    `${(topCutR - hookDepth).toFixed(2)} ${hookMidY.toFixed(2)} ` +
+    `C ${(topCutR - hookDepth).toFixed(2)} ${hookCtrlY2.toFixed(2)} ` +
+    `${topCutR.toFixed(2)} ${hookCtrlY2.toFixed(2)} ` +
+    `${topCutR.toFixed(2)} ${hookBotY.toFixed(2)} ` +
     `L ${topCutR.toFixed(2)} ${(topCutBotY - topCutRounding).toFixed(2)} ` +
     `Q ${topCutR.toFixed(2)} ${topCutBotY.toFixed(2)} ${(topCutR - topCutRounding).toFixed(2)} ${topCutBotY.toFixed(2)} ` +
     `L ${(topCutL + topCutRounding).toFixed(2)} ${topCutBotY.toFixed(2)} ` +
     `Q ${topCutL.toFixed(2)} ${topCutBotY.toFixed(2)} ${topCutL.toFixed(2)} ${(topCutBotY - topCutRounding).toFixed(2)} ` +
+    `L ${topCutL.toFixed(2)} ${hookBotY.toFixed(2)} ` +
+    `C ${topCutL.toFixed(2)} ${hookCtrlY2.toFixed(2)} ` +
+    `${(topCutL + hookDepth).toFixed(2)} ${hookCtrlY2.toFixed(2)} ` +
+    `${(topCutL + hookDepth).toFixed(2)} ${hookMidY.toFixed(2)} ` +
+    `C ${(topCutL + hookDepth).toFixed(2)} ${hookCtrlY1.toFixed(2)} ` +
+    `${topCutL.toFixed(2)} ${hookCtrlY1.toFixed(2)} ` +
+    `${topCutL.toFixed(2)} ${hookTopY.toFixed(2)} ` +
     "Z";
   const rimTopCutoutBorderPath =
     `M ${topCutL.toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `L ${topCutL.toFixed(2)} ${hookTopY.toFixed(2)} ` +
+    `C ${topCutL.toFixed(2)} ${hookCtrlY1.toFixed(2)} ` +
+    `${(topCutL + hookDepth).toFixed(2)} ${hookCtrlY1.toFixed(2)} ` +
+    `${(topCutL + hookDepth).toFixed(2)} ${hookMidY.toFixed(2)} ` +
+    `C ${(topCutL + hookDepth).toFixed(2)} ${hookCtrlY2.toFixed(2)} ` +
+    `${topCutL.toFixed(2)} ${hookCtrlY2.toFixed(2)} ` +
+    `${topCutL.toFixed(2)} ${hookBotY.toFixed(2)} ` +
     `L ${topCutL.toFixed(2)} ${(topCutBotY - topCutRounding).toFixed(2)} ` +
     `Q ${topCutL.toFixed(2)} ${topCutBotY.toFixed(2)} ${(topCutL + topCutRounding).toFixed(2)} ${topCutBotY.toFixed(2)} ` +
     `L ${(topCutR - topCutRounding).toFixed(2)} ${topCutBotY.toFixed(2)} ` +
     `Q ${topCutR.toFixed(2)} ${topCutBotY.toFixed(2)} ${topCutR.toFixed(2)} ${(topCutBotY - topCutRounding).toFixed(2)} ` +
+    `L ${topCutR.toFixed(2)} ${hookBotY.toFixed(2)} ` +
+    `C ${topCutR.toFixed(2)} ${hookCtrlY2.toFixed(2)} ` +
+    `${(topCutR - hookDepth).toFixed(2)} ${hookCtrlY2.toFixed(2)} ` +
+    `${(topCutR - hookDepth).toFixed(2)} ${hookMidY.toFixed(2)} ` +
+    `C ${(topCutR - hookDepth).toFixed(2)} ${hookCtrlY1.toFixed(2)} ` +
+    `${topCutR.toFixed(2)} ${hookCtrlY1.toFixed(2)} ` +
+    `${topCutR.toFixed(2)} ${hookTopY.toFixed(2)} ` +
     `L ${topCutR.toFixed(2)} ${rimOuterY.toFixed(2)}`;
 
   let rimCavityPath: string;
