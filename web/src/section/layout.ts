@@ -291,14 +291,57 @@ export function buildSectionDetail(
       3) rimCavityPath (painted lower cavity overlay)
   */
   const spokeThreadLengthMm = params.spokeThreadLengthMm ?? 0;
-  const totalMm = params.wellDepthMm + nipple.bodyLengthMm;
-  const paddingMm = totalMm * 0.16;
-  const viewH = 300.0;
-  const s = viewH / (totalMm + 2 * paddingMm);
-  const viewW = 300.0;
+  /*
+    mm→px scale comes from rim depth only so switching nipple preset (body length,
+    head size) does not zoom the whole cross-section. Taller stacks use a taller
+    viewBox; the wrapper grows (SVG width 100%, height auto).
+
+    Vertical extent in mm (rim outer = 0): well, head/tip above outer if any,
+    and below-seat depth to barrel / spoke tip + thread.
+  */
+  const rimScaleRefMm = params.wellDepthMm;
+  const rimScalePaddingMm = rimScaleRefMm * 0.16;
+  const s =
+    300.0 / (rimScaleRefMm + 2.0 * rimScalePaddingMm);
+  const seatMm = params.wellDepthMm;
+  const headTopMm = seatMm - nipple.headHeightMm;
+  const tipMm = seatMm + params.tipFromSeatMm;
+  const barrelBotMm = seatMm + nipple.bodyLengthMm;
+  const spokeStackBotMm =
+    seatMm +
+    Math.max(
+      nipple.bodyLengthMm,
+      params.tipFromSeatMm + spokeThreadLengthMm + 2.0,
+    );
+  const topMm = Math.min(0, headTopMm, tipMm);
+  const botMm = Math.max(barrelBotMm, spokeStackBotMm, tipMm + 1.0);
+  const contentMm = botMm - topMm;
+  const paddingMm = contentMm * 0.16;
+  const viewInnerMm = contentMm + 2.0 * paddingMm;
+  const viewH = viewInnerMm * s;
+  /*
+    viewW must cover rim width at scale s plus dimension extension lines
+    (depth line at innerR+34, well line at innerL-24, etc.); a fixed 300px
+    clips wide rims or shallow wells (large s).
+  */
+  const innerWPx = params.innerWidthMm * s;
+  const outerWPx = (params.outerWidthMm ?? params.innerWidthMm) * s;
+  const headWPx = nipple.headDiameterMm * s;
+  const shankWPx = nipple.shankDiameterMm * s;
+  const dimRightPx = innerWPx / 2 + 34 + 46;
+  const dimLeftPx = innerWPx / 2 + 28 + 8;
+  const halfSpanPx = Math.max(
+    outerWPx / 2,
+    dimLeftPx,
+    dimRightPx,
+    headWPx / 2,
+    shankWPx / 2 + 22,
+  );
+  const detailHPadPx = 20;
+  const viewW = 2 * (halfSpanPx + detailHPadPx);
   const cx = viewW / 2.0;
 
-  const rimOuterY = paddingMm * s;
+  const rimOuterY = (paddingMm - topMm) * s;
   const rimSeatY = rimOuterY + params.wellDepthMm * s;
   // Keep nipple seated on the modeled rim seat plane in this cross-section view.
   const nippleSeatY = rimSeatY;
@@ -580,9 +623,12 @@ export function buildSectionDetail(
   const spokeW = spokeWireMm * s;
   const spokeX = cx - spokeW / 2;
   const spokeTopY = tipY;
-  const spokeBotY = barrelEndY + 14;
-  const spokeH = spokeBotY - spokeTopY;
   const spokeThreadBotY = spokeTopY + spokeThreadLengthMm * s;
+  const spokeBotY = Math.max(
+    barrelEndY + 2.0 * s,
+    spokeThreadBotY + 1.5 * s,
+  );
+  const spokeH = Math.max(spokeBotY - spokeTopY, 1.0);
 
   const dimSeatX = shankR + 20;
   const dimRimX = shankL - 20;

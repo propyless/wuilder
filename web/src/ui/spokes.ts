@@ -27,13 +27,30 @@ interface NipplesFile {
 
 const NIPPLES = (nipplesDoc as NipplesFile).nipples;
 
+function fmtMmPreset(x: number): string {
+  const r = Math.round(x * 10) / 10;
+  return Number.isInteger(r) ? String(Math.trunc(r)) : r.toFixed(1);
+}
+
+/** One-line geometry for tooltips and the live hint under the nipple field. */
+function nipplePresetDimsText(n: NippleRow): string {
+  const f = fmtMmPreset;
+  return [
+    `Head ${f(n.headDiameterMm)}×${f(n.headHeightMm)} mm`,
+    `barrel ${f(n.bodyLengthMm)} mm`,
+    `shank Ø${f(n.shankDiameterMm)} mm`,
+    `thread ${f(n.internalThreadLengthMm)} mm`,
+  ].join(" · ");
+}
+
 function nippleSelectOptions(selectedId: string): string {
   const opts = [
     `<option value="">— None (hide diagrams) —</option>`,
-    ...NIPPLES.map(
-      (n) =>
-        `<option value="${n.id}"${n.id === selectedId ? " selected" : ""}>${escapeAttr(n.name)}</option>`,
-    ),
+    ...NIPPLES.map((n) => {
+      const dimsTitle = escapeAttr(nipplePresetDimsText(n));
+      const sel = n.id === selectedId ? " selected" : "";
+      return `<option value="${n.id}" title="${dimsTitle}"${sel}>${escapeAttr(n.name)}</option>`;
+    }),
   ];
   return opts.join("");
 }
@@ -169,77 +186,99 @@ function parseForm(form: HTMLFormElement): Record<string, string> {
   return o;
 }
 
-function validateAndCompute(form: HTMLFormElement): void {
-  const errEl = form.querySelector("#spoke-form-errors") as HTMLElement;
-  const resultsCol = document.querySelector(
-    ".spoke-page-results-col",
-  ) as HTMLElement;
-  errEl.textContent = "";
-  errEl.style.display = "none";
+/** Hub + ERD inputs required for spoke length; diagram / optional fields are tier B. */
+interface SpokeFormModel {
+  o: Record<string, string>;
+  tierAErrors: string[];
+  tierBErrors: string[];
+  erdMm: number;
+  spokeCount: number;
+  crosses: number;
+  lPcd: number;
+  rPcd: number;
+  lOff: number;
+  rOff: number;
+  hole: number;
+  nip: number;
+  nippleId: string;
+  wheelSizeKey: string;
+  wheelBsdMm: number | null;
+  rimInnerW: number | null;
+  rimOuterW: number | null;
+  rimWellD: number | null;
+  spokeThread: number;
+  iwdStr: string;
+  orderedStr: string;
+}
 
+function analyzeSpokeForm(form: HTMLFormElement): SpokeFormModel {
   const o = parseForm(form);
-  const erd = parseFloat(o.erd_mm);
-  const sc = parseInt(o.spoke_count, 10);
+  const erdMm = parseFloat(o.erd_mm);
+  const spokeCount = parseInt(o.spoke_count, 10);
   const crosses = parseInt(o.crosses, 10);
   const lPcd = parseFloat(o.left_flange_diameter_mm);
   const rPcd = parseFloat(o.right_flange_diameter_mm);
   const lOff = parseFloat(o.left_flange_offset_mm);
   const rOff = parseFloat(o.right_flange_offset_mm);
-  const hole = o.flange_hole_diameter_mm === "" ? 0 : parseFloat(o.flange_hole_diameter_mm);
-  const nip = o.nipple_correction_mm === "" ? 0 : parseFloat(o.nipple_correction_mm);
-  const rot = o.rotation_deg === "" ? 0 : parseFloat(o.rotation_deg);
+  const hole =
+    o.flange_hole_diameter_mm === "" ? 0 : parseFloat(o.flange_hole_diameter_mm);
+  const nip =
+    o.nipple_correction_mm === "" ? 0 : parseFloat(o.nipple_correction_mm);
 
-  const errors: string[] = [];
-  if (!Number.isFinite(erd) || erd < 200 || erd > 700) {
-    errors.push("ERD must be between 200 and 700 mm.");
+  const tierAErrors: string[] = [];
+  if (!Number.isFinite(erdMm) || erdMm < 200 || erdMm > 700) {
+    tierAErrors.push("ERD must be between 200 and 700 mm.");
   }
-  if (!Number.isFinite(sc) || sc < 12 || sc > 52 || sc % 2) {
-    errors.push("Invalid spoke count.");
+  if (!Number.isFinite(spokeCount) || spokeCount < 12 || spokeCount > 52 || spokeCount % 2) {
+    tierAErrors.push("Invalid spoke count.");
   }
   if (!Number.isFinite(crosses) || crosses < 0) {
-    errors.push("Crosses must be a non-negative integer.");
+    tierAErrors.push("Crosses must be a non-negative integer.");
   }
-  if (Number.isFinite(sc) && Number.isFinite(crosses)) {
-    const lim = maxCrosses(sc);
+  if (Number.isFinite(spokeCount) && Number.isFinite(crosses)) {
+    const lim = maxCrosses(spokeCount);
     if (crosses > lim) {
-      errors.push(
-        `For ${sc} spokes, crosses must be ≤ ${lim} (tangential hole spacing).`,
+      tierAErrors.push(
+        `For ${spokeCount} spokes, crosses must be ≤ ${lim} (tangential hole spacing).`,
       );
     }
   }
   if (!Number.isFinite(lPcd) || lPcd < 20 || lPcd > 200) {
-    errors.push("Left flange PCD must be between 20 and 200 mm.");
+    tierAErrors.push("Left flange PCD must be between 20 and 200 mm.");
   }
   if (!Number.isFinite(rPcd) || rPcd < 20 || rPcd > 200) {
-    errors.push("Right flange PCD must be between 20 and 200 mm.");
+    tierAErrors.push("Right flange PCD must be between 20 and 200 mm.");
   }
   if (!Number.isFinite(lOff) || lOff < 0 || lOff > 120) {
-    errors.push("Left flange offset must be between 0 and 120 mm.");
+    tierAErrors.push("Left flange offset must be between 0 and 120 mm.");
   }
   if (!Number.isFinite(rOff) || rOff < 0 || rOff > 120) {
-    errors.push("Right flange offset must be between 0 and 120 mm.");
+    tierAErrors.push("Right flange offset must be between 0 and 120 mm.");
   }
-  if (o.flange_hole_diameter_mm !== "" && (!Number.isFinite(hole) || hole < 0 || hole > 10)) {
-    errors.push("Hub hole diameter must be between 0 and 10 mm.");
+  if (
+    o.flange_hole_diameter_mm !== "" &&
+    (!Number.isFinite(hole) || hole < 0 || hole > 10)
+  ) {
+    tierAErrors.push("Hub hole diameter must be between 0 and 10 mm.");
   }
   if (o.nipple_correction_mm !== "" && !Number.isFinite(nip)) {
-    errors.push("Nipple correction must be a number.");
-  }
-  if (o.rotation_deg !== "" && !Number.isFinite(rot)) {
-    errors.push("Rotation must be a number.");
+    tierAErrors.push("Nipple correction must be a number.");
   }
 
   const nippleId = (o.nipple || "").trim();
   const wheelSizeKey = (o.wheel_size || "").trim();
   let wheelBsdMm: number | null = null;
+  const tierBErrors: string[] = [];
   if (wheelSizeKey !== "") {
     const bsd = WHEEL_BSD_MM[wheelSizeKey];
     if (!Number.isFinite(bsd)) {
-      errors.push("Unknown wheel size.");
+      tierBErrors.push("Unknown wheel size.");
     } else {
       wheelBsdMm = bsd;
-      if (erd >= bsd) {
-        errors.push("ERD must be smaller than BSD for the selected wheel size.");
+      if (Number.isFinite(erdMm) && erdMm >= bsd) {
+        tierBErrors.push(
+          "ERD must be smaller than BSD for the selected wheel size.",
+        );
       }
     }
   }
@@ -253,7 +292,7 @@ function validateAndCompute(form: HTMLFormElement): void {
   if (rimWStr !== "") {
     const iw = parseFloat(rimWStr.replace(",", "."));
     if (!Number.isFinite(iw) || iw < 5 || iw > 80) {
-      errors.push("Rim inner width must be between 5 and 80 mm.");
+      tierBErrors.push("Rim inner width must be between 5 and 80 mm.");
     } else {
       rimInnerW = iw;
     }
@@ -261,7 +300,7 @@ function validateAndCompute(form: HTMLFormElement): void {
   if (rimDStr !== "") {
     const wd = parseFloat(rimDStr.replace(",", "."));
     if (!Number.isFinite(wd) || wd < 2 || wd > 60) {
-      errors.push("Rim depth must be between 2 and 60 mm.");
+      tierBErrors.push("Rim depth must be between 2 and 60 mm.");
     } else {
       rimWellD = wd;
     }
@@ -269,18 +308,24 @@ function validateAndCompute(form: HTMLFormElement): void {
   if (rimOuterWStr !== "") {
     const ow = parseFloat(rimOuterWStr.replace(",", "."));
     if (!Number.isFinite(ow) || ow < 10 || ow > 100) {
-      errors.push("Rim outer width must be between 10 and 100 mm.");
+      tierBErrors.push("Rim outer width must be between 10 and 100 mm.");
     } else {
       rimOuterW = ow;
     }
   }
   if (rimInnerW != null && rimOuterW != null && rimOuterW < rimInnerW) {
-    errors.push("Rim outer width must be greater than or equal to rim inner width.");
+    tierBErrors.push(
+      "Rim outer width must be greater than or equal to rim inner width.",
+    );
   }
-  if (wheelBsdMm != null && rimWellD != null) {
-    const seatFromBead = (wheelBsdMm - erd) / 2.0;
+  if (
+    wheelBsdMm != null &&
+    rimWellD != null &&
+    Number.isFinite(erdMm)
+  ) {
+    const seatFromBead = (wheelBsdMm - erdMm) / 2.0;
     if (seatFromBead >= rimWellD) {
-      errors.push(
+      tierBErrors.push(
         `Selected wheel size and ERD imply nipple seat depth ${seatFromBead.toFixed(1)} mm, which exceeds rim depth ${rimWellD.toFixed(1)} mm.`,
       );
     }
@@ -290,17 +335,17 @@ function validateAndCompute(form: HTMLFormElement): void {
   if (spokeThreadStr !== "") {
     spokeThread = parseFloat(spokeThreadStr.replace(",", "."));
     if (!Number.isFinite(spokeThread) || spokeThread < 0 || spokeThread > 50) {
-      errors.push("Spoke thread length must be between 0 and 50 mm.");
+      tierBErrors.push("Spoke thread length must be between 0 and 50 mm.");
     }
   }
   if (nippleId) {
     if (!findNipple(nippleId)) {
-      errors.push("Unknown nipple preset.");
+      tierBErrors.push("Unknown nipple preset.");
     } else if (
       spokeThread > 0 &&
       (rimInnerW == null || rimWellD == null)
     ) {
-      errors.push(
+      tierBErrors.push(
         "Enter rim inner width and rim depth to draw the spoke-tip diagram (or set spoke thread length to 0).",
       );
     }
@@ -308,33 +353,74 @@ function validateAndCompute(form: HTMLFormElement): void {
   if (iwdStr !== "") {
     const iwd = parseFloat(iwdStr.replace(",", "."));
     if (!Number.isFinite(iwd) || iwd < 1 || iwd > 58) {
-      errors.push("Inner wall depth must be between 1 and 58 mm.");
+      tierBErrors.push("Inner wall depth must be between 1 and 58 mm.");
     } else if (
       rimWellD != null &&
       Number.isFinite(iwd) &&
       iwd >= rimWellD
     ) {
-      errors.push("Inner wall depth must be less than the total rim depth.");
+      tierBErrors.push(
+        "Inner wall depth must be less than the total rim depth.",
+      );
     }
   }
   const orderedStr = o.ordered_spoke_length_mm ?? "";
   if (orderedStr !== "") {
     const ol = parseFloat(orderedStr.replace(",", "."));
     if (!Number.isFinite(ol) || ol < 100 || ol > 400) {
-      errors.push("Ordered spoke length must be between 100 and 400 mm.");
+      tierBErrors.push("Ordered spoke length must be between 100 and 400 mm.");
     }
   }
 
-  if (errors.length) {
-    errEl.textContent = errors.join(" ");
-    errEl.style.display = "block";
-    if (resultsCol) {
-      resultsCol.innerHTML = `<div class="spoke-page-results-placeholder prose"><p class="hint">Fix the form and use <strong>Calculate</strong> again.</p></div>`;
-    }
-    return;
-  }
+  return {
+    o,
+    tierAErrors,
+    tierBErrors,
+    erdMm,
+    spokeCount,
+    crosses,
+    lPcd,
+    rPcd,
+    lOff,
+    rOff,
+    hole,
+    nip,
+    nippleId,
+    wheelSizeKey,
+    wheelBsdMm,
+    rimInnerW,
+    rimOuterW,
+    rimWellD,
+    spokeThread,
+    iwdStr,
+    orderedStr,
+  };
+}
 
-  const rotationRad = (rot * Math.PI) / 180;
+function renderSpokeResultsToResultsCol(
+  m: SpokeFormModel,
+  resultsCol: HTMLElement,
+  options: { skipDiagram: boolean },
+): void {
+  const o = m.o;
+  const erd = m.erdMm;
+  const sc = m.spokeCount;
+  const crosses = m.crosses;
+  const lPcd = m.lPcd;
+  const rPcd = m.rPcd;
+  const lOff = m.lOff;
+  const rOff = m.rOff;
+  const hole = m.hole;
+  const nip = m.nip;
+  const nippleId = m.nippleId;
+  const wheelSizeKey = m.wheelSizeKey;
+  const wheelBsdMm = m.wheelBsdMm;
+  const rimInnerW = m.rimInnerW;
+  const rimOuterW = m.rimOuterW;
+  const rimWellD = m.rimWellD;
+  const spokeThread = m.spokeThread;
+  const iwdStr = m.iwdStr;
+
   const spokes = buildSpokeResults({
     erdMm: erd,
     spokeCount: sc,
@@ -345,7 +431,6 @@ function validateAndCompute(form: HTMLFormElement): void {
     rightFlangeOffsetMm: rOff,
     flangeHoleDiameterMm: hole,
     nippleCorrectionMm: nip,
-    rotationRad,
   });
 
   const uniqueLengths = [...new Set(spokes.map((s) => lengthKey(s.lengthMm)))].sort(
@@ -373,26 +458,6 @@ function validateAndCompute(form: HTMLFormElement): void {
     },
   ];
 
-  const cx = 120;
-  const cy = 120;
-  const rimR = 95;
-  const avgPcd = (lPcd + rPcd) / 2;
-  const hubR = rimR * (avgPcd / erd);
-  const displayTwist = -Math.PI / 2;
-
-  const spokeLines = spokes
-    .map((s) => {
-      const lk = lengthKey(s.lengthMm);
-      const phiR = s.rimAngleRad + displayTwist;
-      const phiH = s.hubAngleRad + displayTwist;
-      const x1 = cx + rimR * Math.cos(phiR);
-      const y1 = cy + rimR * Math.sin(phiR);
-      const x2 = cx + hubR * Math.cos(phiH);
-      const y2 = cy + hubR * Math.sin(phiH);
-      return `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="${colorByLength[lk]}" stroke-width="1.6" stroke-linecap="round" />`;
-    })
-    .join("\n");
-
   const payload: BuildParamsPayload = {
     erd_mm: erd,
     spoke_count: sc,
@@ -407,7 +472,13 @@ function validateAndCompute(form: HTMLFormElement): void {
   saveBuildParams(payload);
 
   let sectionPanelsHtml = "";
-  if (nippleId && rimInnerW != null && rimWellD != null && spokeThread > 0) {
+  if (
+    !options.skipDiagram &&
+    nippleId &&
+    rimInnerW != null &&
+    rimWellD != null &&
+    spokeThread > 0
+  ) {
     const nipRow = findNipple(nippleId);
     if (nipRow) {
       const nippleShape: NippleLike = {
@@ -504,7 +575,7 @@ function validateAndCompute(form: HTMLFormElement): void {
               <span class="tension-stat-num">${leftRow.lengthMm}</span>
               <span class="tension-stat-unit">mm</span>
               <span class="spoke-length-meta">${leftRow.count} spokes</span>
-              <span class="swatch spoke-length-swatch" style="background:${leftRow.color}" title="Wheel map color"></span>
+              <span class="swatch spoke-length-swatch" style="background:${leftRow.color}" title="Length group color"></span>
             </div>
             <div class="tension-stat-dual-divider" aria-hidden="true"></div>
             <div class="tension-stat-dual-item tension-stat-dual-right">
@@ -512,22 +583,71 @@ function validateAndCompute(form: HTMLFormElement): void {
               <span class="tension-stat-num">${rightRow.lengthMm}</span>
               <span class="tension-stat-unit">mm</span>
               <span class="spoke-length-meta">${rightRow.count} spokes</span>
-              <span class="swatch spoke-length-swatch" style="background:${rightRow.color}" title="Wheel map color"></span>
+              <span class="swatch spoke-length-swatch" style="background:${rightRow.color}" title="Length group color"></span>
             </div>
           </div>
         </div>
       </section>
-      <section class="wheel-panel spoke-page-wheel-panel">
-        <div class="wheel-wrap spoke-page-wheel-wrap">
-          <div class="tension-stat-block-title">Spoke lengths</div>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Spokes from rim to hub; colors match length groups">
-            <circle cx="${cx}" cy="${cy}" r="${hubR}" class="wheel-hub" />
-            <circle cx="${cx}" cy="${cy}" r="${rimR}" class="wheel-rim" />
-            ${spokeLines}
-          </svg>
-        </div>
-      </section>
       ${sectionPanelsHtml}`;
+  }
+}
+
+function debounceSpokeRecompute(fn: () => void, ms: number): () => void {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  return () => {
+    if (t !== undefined) clearTimeout(t);
+    t = setTimeout(() => {
+      t = undefined;
+      fn();
+    }, ms);
+  };
+}
+
+function runSpokeFormUpdate(
+  form: HTMLFormElement,
+  mode: "auto" | "submit",
+  spokeValidationFromSubmit: { current: boolean },
+): void {
+  const errEl = form.querySelector("#spoke-form-errors") as HTMLElement;
+  const resultsCol = document.querySelector(
+    ".spoke-page-results-col",
+  ) as HTMLElement | null;
+  const m = analyzeSpokeForm(form);
+  const allErrors = [...m.tierAErrors, ...m.tierBErrors];
+
+  if (mode === "submit") {
+    spokeValidationFromSubmit.current = true;
+  }
+
+  if (allErrors.length === 0) {
+    spokeValidationFromSubmit.current = false;
+    errEl.textContent = "";
+    errEl.style.display = "none";
+    if (resultsCol) {
+      renderSpokeResultsToResultsCol(m, resultsCol, { skipDiagram: false });
+    }
+    return;
+  }
+
+  if (spokeValidationFromSubmit.current || mode === "submit") {
+    errEl.textContent = allErrors.join(" ");
+    errEl.style.display = "block";
+  } else {
+    errEl.textContent = "";
+    errEl.style.display = "none";
+  }
+
+  if (m.tierAErrors.length === 0) {
+    if (resultsCol) {
+      renderSpokeResultsToResultsCol(m, resultsCol, {
+        skipDiagram: m.tierBErrors.length > 0,
+      });
+    }
+  } else if (resultsCol) {
+    const hint = spokeValidationFromSubmit.current
+      ? "Fix the form and use <strong>Calculate</strong> again."
+      : "Enter valid hub and ERD fields to see spoke lengths.";
+    resultsCol.innerHTML = `<div class="spoke-page-results-placeholder prose"><p class="hint">${hint}</p></div>`;
   }
 }
 
@@ -542,8 +662,8 @@ export function renderSpokes(container: HTMLElement): void {
   <div class="spoke-page-layout">
     <div class="spoke-page-prose prose">
       <h1>Spoke length</h1>
-      <p class="lede">ERD, hub PCDs, <strong>left/right flange offsets</strong> (type them in or use the <strong>Flange offset calculator</strong> from overall width and <em>x</em> / <em>y</em>), crosses. Wheel map: <strong>odd</strong> spoke numbers (#1, 3, …) = <strong>left</strong>; <strong>even</strong> (#2, 4, …) = <strong>right</strong> — same order as the tension map.</p>
-      <p class="hint">After building, <a href="#/tension">plot TM-1 readings</a> in the same spoke order. Your inputs are saved in the browser and restored after a refresh.</p>
+      <p class="lede">ERD, hub PCDs, <strong>left/right flange offsets</strong> (type them in or use the <strong>Flange offset calculator</strong> from overall width and <em>x</em> / <em>y</em>), crosses. Spoke numbering: <strong>odd</strong> (#1, 3, …) = <strong>left</strong>; <strong>even</strong> (#2, 4, …) = <strong>right</strong> — same order as the tension map.</p>
+      <p class="hint">After building, <a href="#/tension">plot TM-1 readings</a> in the same spoke order. Spoke lengths update as you type when hub and ERD fields are valid. Use <strong>Calculate</strong> to check optional rim/nipple fields and see validation errors.</p>
     </div>
     <div class="spoke-page-form-col">
       <form class="form-grid spoke-page-form-grid" id="spoke-calculator-form" novalidate data-form-persist-key="${FORM_SPOKE_KEY}">
@@ -591,11 +711,6 @@ export function renderSpokes(container: HTMLElement): void {
           <label for="id_nipple_correction_mm">Nipple correction (mm)</label>
           <input type="number" name="nipple_correction_mm" id="id_nipple_correction_mm" step="any" value="0" />
         </div>
-        <div class="field">
-          <label for="id_rotation_deg">Rotation (deg)</label>
-          <input type="number" name="rotation_deg" id="id_rotation_deg" step="any" value="0" />
-          <p class="hint">Rotate the diagram CCW; does not change lengths.</p>
-        </div>
         <fieldset class="field-span section-fieldset">
           <legend>Spoke tip detail (optional)</legend>
           <p class="hint">Choose a nipple preset, rim cavity dimensions, and a positive <strong>spoke thread length</strong> to show the zoomed spoke-tip diagram.</p>
@@ -624,7 +739,8 @@ export function renderSpokes(container: HTMLElement): void {
             </div>
             <div class="field">
               <label for="id_nipple">Nipple</label>
-              <select name="nipple" id="id_nipple">${nippleSelectOptions("")}</select>
+              <select name="nipple" id="id_nipple" aria-describedby="id_nipple_dims">${nippleSelectOptions("")}</select>
+              <p class="hint nipple-preset-dims" id="id_nipple_dims" aria-live="polite" hidden></p>
             </div>
             <div class="field">
               <label for="id_spoke_thread_length_mm">Spoke thread length (mm)</label>
@@ -645,7 +761,7 @@ export function renderSpokes(container: HTMLElement): void {
     </div>
     <div class="spoke-page-results-col">
       <div class="spoke-page-results-placeholder prose">
-        <p class="hint">Use <strong>Calculate</strong> to see spoke lengths and the wheel map here.</p>
+        <p class="hint">Spoke lengths appear here when hub and ERD inputs are valid.</p>
       </div>
     </div>
   </div>`;
@@ -657,9 +773,36 @@ export function renderSpokes(container: HTMLElement): void {
     restore: true,
   });
 
+  const nippleSelect = form.querySelector("#id_nipple") as HTMLSelectElement | null;
+  const nippleDimsHint = document.getElementById("id_nipple_dims");
+  function syncNipplePresetDimsUi(): void {
+    if (!nippleSelect || !nippleDimsHint) return;
+    const id = nippleSelect.value.trim();
+    const row = id ? findNipple(id) : undefined;
+    if (!row) {
+      nippleSelect.removeAttribute("title");
+      nippleDimsHint.textContent = "";
+      nippleDimsHint.hidden = true;
+      return;
+    }
+    const text = nipplePresetDimsText(row);
+    nippleSelect.title = text;
+    nippleDimsHint.textContent = text;
+    nippleDimsHint.hidden = false;
+  }
+  nippleSelect?.addEventListener("change", syncNipplePresetDimsUi);
+  syncNipplePresetDimsUi();
+
+  const spokeValidationFromSubmit = { current: false };
+  const scheduleSpokeRecompute = debounceSpokeRecompute(() => {
+    runSpokeFormUpdate(form, "auto", spokeValidationFromSubmit);
+  }, 320);
+
+  form.addEventListener("input", scheduleSpokeRecompute);
+  form.addEventListener("change", scheduleSpokeRecompute);
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    validateAndCompute(form);
+    runSpokeFormUpdate(form, "submit", spokeValidationFromSubmit);
   });
 
   const ids = [
@@ -678,11 +821,14 @@ export function renderSpokes(container: HTMLElement): void {
   });
   const applyBtn = document.getElementById("flange-calc-apply");
   if (applyBtn) {
-    applyBtn.addEventListener("click", () => applyFlangeCalcToForm());
+    applyBtn.addEventListener("click", () => {
+      applyFlangeCalcToForm();
+      scheduleSpokeRecompute();
+    });
   }
   runFlangeCalc();
 
   if (restored && form.checkValidity()) {
-    validateAndCompute(form);
+    runSpokeFormUpdate(form, "auto", spokeValidationFromSubmit);
   }
 }

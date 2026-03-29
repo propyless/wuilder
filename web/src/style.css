@@ -251,15 +251,6 @@ body.page-wide .main {
   padding: 0.35rem 0;
 }
 
-.spoke-page-results-col .spoke-page-wheel-panel {
-  margin-top: 1rem;
-  margin-bottom: 0;
-}
-
-.spoke-page-results-col .spoke-page-wheel-wrap {
-  max-width: 100%;
-}
-
 .spoke-page-results-col .section-panel {
   margin-top: 1rem;
 }
@@ -408,15 +399,6 @@ body.page-wide .main {
 
 .flange-offset-calc-actions {
   margin: 0.55rem 0 0;
-}
-
-.wheel-panel {
-  margin: 2rem 0 1rem;
-}
-
-.wheel-title {
-  font-size: 1.25rem;
-  margin: 0 0 0.75rem;
 }
 
 .wheel-wrap {

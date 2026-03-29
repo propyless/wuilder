@@ -8,6 +8,96 @@
       "bodyLengthMm": 12.0,
       "shankDiameterMm": 4.5,
       "internalThreadLengthMm": 10.0
+    },
+    {
+      "id": "dt_standard_brass_12",
+      "name": "DT Swiss Standard brass 12 mm",
+      "headDiameterMm": 7.0,
+      "headHeightMm": 5.4,
+      "bodyLengthMm": 12.0,
+      "shankDiameterMm": 4.5,
+      "internalThreadLengthMm": 9.8
+    },
+    {
+      "id": "dt_standard_brass_14",
+      "name": "DT Swiss Standard brass 14 mm",
+      "headDiameterMm": 7.0,
+      "headHeightMm": 5.4,
+      "bodyLengthMm": 14.0,
+      "shankDiameterMm": 4.5,
+      "internalThreadLengthMm": 11.7
+    },
+    {
+      "id": "dt_standard_brass_16",
+      "name": "DT Swiss Standard brass 16 mm",
+      "headDiameterMm": 7.0,
+      "headHeightMm": 5.4,
+      "bodyLengthMm": 16.0,
+      "shankDiameterMm": 4.5,
+      "internalThreadLengthMm": 13.5
+    },
+    {
+      "id": "dt_pro_head_brass_12",
+      "name": "DT Swiss Pro Head brass 12 mm",
+      "headDiameterMm": 7.6,
+      "headHeightMm": 5.2,
+      "bodyLengthMm": 12.0,
+      "shankDiameterMm": 4.5,
+      "internalThreadLengthMm": 9.8
+    },
+    {
+      "id": "dt_pro_head_brass_14",
+      "name": "DT Swiss Pro Head brass 14 mm",
+      "headDiameterMm": 7.6,
+      "headHeightMm": 5.2,
+      "bodyLengthMm": 14.0,
+      "shankDiameterMm": 4.5,
+      "internalThreadLengthMm": 11.7
+    },
+    {
+      "id": "dt_squorx_pro_brass_12",
+      "name": "DT Swiss Squorx Pro Head brass 15 mm",
+      "headDiameterMm": 7.6,
+      "headHeightMm": 6.0,
+      "bodyLengthMm": 9.0,
+      "shankDiameterMm": 4.5,
+      "internalThreadLengthMm": 7.2
+    },
+    {
+      "id": "dt_squorx_pro_alu_12",
+      "name": "DT Swiss Squorx Pro Head aluminium 15 mm",
+      "headDiameterMm": 7.6,
+      "headHeightMm": 6.0,
+      "bodyLengthMm": 9.0,
+      "shankDiameterMm": 4.2,
+      "internalThreadLengthMm": 7.0
+    },
+    {
+      "id": "sapim_polyax_brass_12",
+      "name": "Sapim Polyax brass 12 mm",
+      "headDiameterMm": 5.9,
+      "headHeightMm": 4.4,
+      "bodyLengthMm": 12.0,
+      "shankDiameterMm": 4.0,
+      "internalThreadLengthMm": 9.5
+    },
+    {
+      "id": "sapim_polyax_brass_14",
+      "name": "Sapim Polyax brass 14 mm",
+      "headDiameterMm": 5.9,
+      "headHeightMm": 4.4,
+      "bodyLengthMm": 14.0,
+      "shankDiameterMm": 4.0,
+      "internalThreadLengthMm": 11.3
+    },
+    {
+      "id": "sapim_polyax_alu_12",
+      "name": "Sapim Polyax aluminium 12 mm",
+      "headDiameterMm": 5.9,
+      "headHeightMm": 4.4,
+      "bodyLengthMm": 12.0,
+      "shankDiameterMm": 4.0,
+      "internalThreadLengthMm": 9.5
     }
   ]
 }
