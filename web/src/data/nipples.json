@@ -1,0 +1,13 @@
+{
+  "nipples": [
+    {
+      "id": "demo_12",
+      "name": "Demo 12 mm nipple",
+      "headDiameterMm": 7.2,
+      "headHeightMm": 5.5,
+      "bodyLengthMm": 12.0,
+      "shankDiameterMm": 4.5,
+      "internalThreadLengthMm": 10.0
+    }
+  ]
+}
