@@ -213,6 +213,9 @@ export interface SectionDetail {
   cx: number;
   scale: number;
   rimPath: string;
+  rimOuterBorderPath: string;
+  rimTopCutoutPath: string;
+  rimTopCutoutBorderPath: string;
   rimCavityPath: string;
   nippleHeadPath: string;
   nippleBodyPath: string;
@@ -251,7 +254,9 @@ export function buildSectionDetail(
     Detail view stack (not to scale):
 
       rimOuterY  --------------------  outer crown
-                   \                /
+                 __\____bowl____/__    top cutout
+                   \-- thin --/
+                      bridge
       seatY      --------------------  nipple seat plane
                      [head]
                       |  |
@@ -262,7 +267,8 @@ export function buildSectionDetail(
 
     This function builds two rim paths:
       1) rimPath (solid metal)
-      2) rimCavityPath (painted cutout overlay)
+      2) rimTopCutoutPath (painted top bowl cutout)
+      3) rimCavityPath (painted lower cavity overlay)
   */
   const spokeThreadLengthMm = params.spokeThreadLengthMm ?? 0;
   const totalMm = params.wellDepthMm + nipple.bodyLengthMm;
@@ -359,6 +365,18 @@ export function buildSectionDetail(
     `L ${xInL.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
     `Q ${xInL.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xInL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
     "Z";
+  const rimOuterBorderPath =
+    `M ${(xInL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `Q ${xInL.toFixed(2)} ${rimOuterY.toFixed(2)} ${xInL.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
+    `L ${xInL.toFixed(2)} ${bendY.toFixed(2)} ` +
+    `C ${xInL.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `${(cx - uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
+    `${cx.toFixed(2)} ${uBotY.toFixed(2)} ` +
+    `C ${(cx + uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
+    `${xInR.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `${xInR.toFixed(2)} ${bendY.toFixed(2)} ` +
+    `L ${xInR.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
+    `Q ${xInR.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xInR - r).toFixed(2)} ${rimOuterY.toFixed(2)}`;
 
   /*
     Cavity is its own filled path layered on top (no even-odd fill rule).
@@ -390,6 +408,42 @@ export function buildSectionDetail(
     Math.max(cavBotY - cavTopY, 1.0) * 0.08,
     (cavR - cavL) * 0.06,
   );
+
+  /*
+    Top bowl cutout: an additional overlay carved down from rimOuterY.
+    Keep a thin bridge to the cavity by stopping above cavTopY.
+  */
+  const topSideTMm = Math.max(1.0, params.innerWidthMm * 0.06);
+  const maxTopSideT = (xInR - xInL) * 0.3;
+  const topSideT = Math.min(topSideTMm * s, maxTopSideT);
+  const topCutL = xInL + topSideT;
+  const topCutR = xInR - topSideT;
+  const bridgeTMm = Math.max(0.35, params.wellDepthMm * 0.015);
+  const bridgeT = bridgeTMm * s;
+  const minTopCutDepth = Math.max(1.4 * s, wellPx * 0.12);
+  const maxTopCutBot = cavTopY - Math.max(bridgeT, 0.2 * s);
+  const requestedTopCutBot = rimOuterY + minTopCutDepth;
+  const topCutBotY = Math.min(requestedTopCutBot, maxTopCutBot);
+  const topCutRounding = Math.min(
+    1.6 * s,
+    Math.max(topCutBotY - rimOuterY, 1.0) * 0.22,
+    Math.max(topCutR - topCutL, 1.0) * 0.10,
+  );
+  const rimTopCutoutPath =
+    `M ${topCutL.toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `L ${topCutR.toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `L ${topCutR.toFixed(2)} ${(topCutBotY - topCutRounding).toFixed(2)} ` +
+    `Q ${topCutR.toFixed(2)} ${topCutBotY.toFixed(2)} ${(topCutR - topCutRounding).toFixed(2)} ${topCutBotY.toFixed(2)} ` +
+    `L ${(topCutL + topCutRounding).toFixed(2)} ${topCutBotY.toFixed(2)} ` +
+    `Q ${topCutL.toFixed(2)} ${topCutBotY.toFixed(2)} ${topCutL.toFixed(2)} ${(topCutBotY - topCutRounding).toFixed(2)} ` +
+    "Z";
+  const rimTopCutoutBorderPath =
+    `M ${topCutL.toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `L ${topCutL.toFixed(2)} ${(topCutBotY - topCutRounding).toFixed(2)} ` +
+    `Q ${topCutL.toFixed(2)} ${topCutBotY.toFixed(2)} ${(topCutL + topCutRounding).toFixed(2)} ${topCutBotY.toFixed(2)} ` +
+    `L ${(topCutR - topCutRounding).toFixed(2)} ${topCutBotY.toFixed(2)} ` +
+    `Q ${topCutR.toFixed(2)} ${topCutBotY.toFixed(2)} ${topCutR.toFixed(2)} ${(topCutBotY - topCutRounding).toFixed(2)} ` +
+    `L ${topCutR.toFixed(2)} ${rimOuterY.toFixed(2)}`;
 
   let rimCavityPath: string;
   if (hasIwd) {
@@ -464,6 +518,9 @@ export function buildSectionDetail(
     cx,
     scale: s,
     rimPath,
+    rimOuterBorderPath,
+    rimTopCutoutPath,
+    rimTopCutoutBorderPath,
     rimCavityPath,
     nippleHeadPath,
     nippleBodyPath,

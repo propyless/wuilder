@@ -62,7 +62,10 @@ export function renderSectionDetailHtml(detail: SectionDetail, fit: NippleFit): 
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fmt0(d.viewW)} ${fmt0(d.viewH)}" role="img" aria-label="Zoomed cross-section: rim cavity, nipple, spoke tip position">
       <defs>
         <style>
-          .det-rim { fill: #c8c3b8; stroke: #3d3931; stroke-width: 1.5; }
+          .det-rim { fill: #c8c3b8; stroke: none; }
+          .det-rim-border { fill: none; stroke: #3d3931; stroke-width: 1.5; }
+          .det-rim-top-cutout { fill: #f5f3ef; stroke: none; }
+          .det-rim-top-cutout-border { fill: none; stroke: #3d3931; stroke-width: 1.5; }
           .det-rim-cavity { fill: #f5f3ef; stroke: #9e9889; stroke-width: 0.8; }
           .det-nipple-head { fill: #b87333; stroke: #4a2c0a; stroke-width: 1; }
           .det-nipple-shank { fill: #c9a06b; stroke: #4a2c0a; stroke-width: 1; }
@@ -86,15 +89,16 @@ export function renderSectionDetailHtml(detail: SectionDetail, fit: NippleFit): 
         </pattern>
       </defs>
       <path class="det-rim" d="${d.rimPath}" />
+      <path class="det-rim-border" d="${d.rimOuterBorderPath}" />
+      <path class="det-rim-top-cutout" d="${d.rimTopCutoutPath}" />
+      <path class="det-rim-top-cutout-border" d="${d.rimTopCutoutBorderPath}" />
       <path class="det-rim-cavity" d="${d.rimCavityPath}" />
       <path class="det-nipple-head" d="${d.nippleHeadPath}" />
       <path class="det-nipple-shank" d="${d.nippleBodyPath}" />
       <path class="det-thread-zone" d="${d.nippleThreadZonePath}" />
-      <line class="det-ref" x1="20" y1="${fmt2(d.rimOuterY)}" x2="${fmt0(d.viewW)}" y2="${fmt2(d.rimOuterY)}" />
       ${innerWallRef}
       <line class="det-ref" x1="20" y1="${fmt2(d.seatY)}" x2="${fmt0(d.viewW)}" y2="${fmt2(d.seatY)}" />
       <line class="det-ref" x1="20" y1="${fmt2(d.barrelEndY)}" x2="${fmt0(d.viewW)}" y2="${fmt2(d.barrelEndY)}" />
-      <text class="det-label" x="4" y="${fmt2(d.rimOuterY)}" dy="-3">Outer wall</text>
       ${innerWallLabel}
       <text class="det-label" x="4" y="${fmt2(d.barrelEndY)}" dy="12">Barrel end</text>
       <rect class="det-spoke" x="${fmt2(d.spokeX)}" y="${fmt2(d.spokeTopY)}" width="${fmt2(d.spokeW)}" height="${fmt2(d.spokeH)}" />
