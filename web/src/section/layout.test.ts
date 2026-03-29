@@ -60,4 +60,27 @@ describe("buildSectionLayout", () => {
     expect(d.flangeOffsetMm).toBe(hub.leftFlangeOffsetMm);
     expect(d.flangeX).toBeLessThan(d.nippleX);
   });
+
+  it("shortens diagram spoke length when rim hole and spoke Ø are set", () => {
+    const hole = 2.6;
+    const crosses = 3;
+    const n = 32;
+    const noSeat = buildSectionLayout(rim, hub, nipple, {
+      side: "right",
+      spokeCount: n,
+      crosses,
+      flangeHoleDiameterMm: hole,
+      nippleCorrectionMm: 0,
+    });
+    const withSeat = buildSectionLayout(rim, hub, nipple, {
+      side: "right",
+      spokeCount: n,
+      crosses,
+      flangeHoleDiameterMm: hole,
+      nippleCorrectionMm: 0,
+      rimHoleDiameterMm: 2.6,
+      spokeDiameterMm: 2,
+    });
+    expect(noSeat.spokeLengthMm - withSeat.spokeLengthMm).toBeCloseTo(0.46, 4);
+  });
 });

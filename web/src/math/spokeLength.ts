@@ -118,6 +118,27 @@ export function rimEntryAngleDeg(params: {
   return (Math.acos(c) * 180) / Math.PI;
 }
 
+/**
+ * Extra shortening (mm) applied after hub hole and nipple correction when **both**
+ * rim drill diameter and spoke diameter are supplied. Uses (rim + spoke) / 10, which
+ * tracks common online calculators’ small delta vs plain triangle + hub hole (e.g.
+ * 2.6 + 2.0 mm → 0.46 mm). Omit either field (or leave at 0) to skip.
+ */
+export function rimDrillAndSpokeSeatCorrectionMm(
+  rimHoleDiameterMm: number,
+  spokeDiameterMm: number,
+): number {
+  if (
+    !Number.isFinite(rimHoleDiameterMm) ||
+    !Number.isFinite(spokeDiameterMm) ||
+    rimHoleDiameterMm <= 0 ||
+    spokeDiameterMm <= 0
+  ) {
+    return 0;
+  }
+  return (rimHoleDiameterMm + spokeDiameterMm) / 10;
+}
+
 export function buildSpokeResults(params: {
   erdMm: number;
   spokeCount: number;
@@ -128,6 +149,8 @@ export function buildSpokeResults(params: {
   rightFlangeOffsetMm: number;
   flangeHoleDiameterMm?: number;
   nippleCorrectionMm?: number;
+  rimHoleDiameterMm?: number;
+  spokeDiameterMm?: number;
   rotationRad?: number;
 }): SpokeResult[] {
   const {
@@ -140,8 +163,11 @@ export function buildSpokeResults(params: {
     rightFlangeOffsetMm,
     flangeHoleDiameterMm = 0,
     nippleCorrectionMm = 0,
+    rimHoleDiameterMm = 0,
+    spokeDiameterMm = 0,
     rotationRad = 0,
   } = params;
+  const seat = rimDrillAndSpokeSeatCorrectionMm(rimHoleDiameterMm, spokeDiameterMm);
   const alpha = lacingAngleRad(crosses, n);
   const out: SpokeResult[] = [];
   for (let i = 0; i < n; i++) {
@@ -153,7 +179,7 @@ export function buildSpokeResults(params: {
     const hubPhi = side === "left" ? phi - alpha : phi + alpha;
     const raw = spokeLengthMm(erdMm, rFl, wFl, crosses, n);
     const length =
-      raw - flangeHoleDiameterMm / 2 + nippleCorrectionMm;
+      raw - flangeHoleDiameterMm / 2 + nippleCorrectionMm - seat;
     out.push({
       index: i,
       side,

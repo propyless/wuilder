@@ -4,6 +4,7 @@ import {
   flangeOffsetsFromHubOverallWidth,
   lacingAngleRad,
   maxCrosses,
+  rimDrillAndSpokeSeatCorrectionMm,
   rimEntryAngleDeg,
   spokeHeadClearanceApproxMm,
   spokeLengthMm,
@@ -128,5 +129,42 @@ describe("spokeLength", () => {
     });
     expect(angL).toBeCloseTo(8.63, 1);
     expect(angR).toBeCloseTo(8.63, 1);
+  });
+
+  it("rimDrillAndSpokeSeatCorrectionMm uses both diameters only", () => {
+    expect(rimDrillAndSpokeSeatCorrectionMm(2.6, 2)).toBeCloseTo(0.46, 4);
+    expect(rimDrillAndSpokeSeatCorrectionMm(2.6, 0)).toBe(0);
+    expect(rimDrillAndSpokeSeatCorrectionMm(0, 2)).toBe(0);
+  });
+
+  it("buildSpokeResults applies optional rim/spoke seat term", () => {
+    const seat = (2.6 + 2) / 10;
+    const base = buildSpokeResults({
+      erdMm: 599,
+      spokeCount: 32,
+      crosses: 3,
+      leftFlangeRadiusMm: 22,
+      rightFlangeRadiusMm: 22,
+      leftFlangeOffsetMm: 23.5,
+      rightFlangeOffsetMm: 33.5,
+      flangeHoleDiameterMm: 2.6,
+      nippleCorrectionMm: 0,
+    });
+    const adj = buildSpokeResults({
+      erdMm: 599,
+      spokeCount: 32,
+      crosses: 3,
+      leftFlangeRadiusMm: 22,
+      rightFlangeRadiusMm: 22,
+      leftFlangeOffsetMm: 23.5,
+      rightFlangeOffsetMm: 33.5,
+      flangeHoleDiameterMm: 2.6,
+      nippleCorrectionMm: 0,
+      rimHoleDiameterMm: 2.6,
+      spokeDiameterMm: 2,
+    });
+    expect(base[0].lengthMm - adj[0].lengthMm).toBeCloseTo(seat, 6);
+    expect(adj[0].lengthMm).toBeCloseTo(290.97, 1);
+    expect(adj[1].lengthMm).toBeCloseTo(291.95, 1);
   });
 });

@@ -1,4 +1,4 @@
-import { spokeLengthMm } from "../math/spokeLength";
+import { rimDrillAndSpokeSeatCorrectionMm, spokeLengthMm } from "../math/spokeLength";
 
 export type SectionSide = "left" | "right";
 
@@ -55,6 +55,8 @@ export function buildSectionLayout(
     crosses: number;
     flangeHoleDiameterMm?: number;
     nippleCorrectionMm?: number;
+    rimHoleDiameterMm?: number;
+    spokeDiameterMm?: number;
   },
 ): SectionDiagram {
   /*
@@ -73,6 +75,10 @@ export function buildSectionLayout(
   const cx = 210.0;
   const flangeHoleDiameterMm = params.flangeHoleDiameterMm ?? 0;
   const nippleCorrectionMm = params.nippleCorrectionMm ?? 0;
+  const seat = rimDrillAndSpokeSeatCorrectionMm(
+    params.rimHoleDiameterMm ?? 0,
+    params.spokeDiameterMm ?? 0,
+  );
 
   let offsetMm: number;
   let pcdMm: number;
@@ -96,7 +102,7 @@ export function buildSectionLayout(
     params.spokeCount,
   );
   const spokeL =
-    raw - flangeHoleDiameterMm / 2.0 + nippleCorrectionMm;
+    raw - flangeHoleDiameterMm / 2.0 + nippleCorrectionMm - seat;
 
   /*
     Spoke section triangle (right triangle in projected section):

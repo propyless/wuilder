@@ -195,6 +195,10 @@ interface SpokeFormModel {
   rOff: number;
   hole: number;
   nip: number;
+  /** Rim drill Ø (mm); used only with spokeDiamMm for optional seat correction. */
+  rimHoleMm: number;
+  /** Spoke Ø (mm); used only with rimHoleMm for optional seat correction. */
+  spokeDiamMm: number;
   nippleId: string;
   wheelSizeKey: string;
   wheelBsdMm: number | null;
@@ -258,6 +262,23 @@ function analyzeSpokeForm(form: HTMLFormElement): SpokeFormModel {
   }
   if (o.nipple_correction_mm !== "" && !Number.isFinite(nip)) {
     tierAErrors.push("Nipple correction must be a number.");
+  }
+
+  const rimHoleStr = o.rim_hole_diameter_mm ?? "";
+  const spokeDiaStr = o.spoke_diameter_mm ?? "";
+  let rimHoleMm = 0;
+  let spokeDiamMm = 0;
+  if (rimHoleStr !== "") {
+    rimHoleMm = parseFloat(rimHoleStr.replace(",", "."));
+    if (!Number.isFinite(rimHoleMm) || rimHoleMm < 0 || rimHoleMm > 10) {
+      tierAErrors.push("Rim hole diameter must be between 0 and 10 mm when set.");
+    }
+  }
+  if (spokeDiaStr !== "") {
+    spokeDiamMm = parseFloat(spokeDiaStr.replace(",", "."));
+    if (!Number.isFinite(spokeDiamMm) || spokeDiamMm < 0 || spokeDiamMm > 5) {
+      tierAErrors.push("Spoke diameter must be between 0 and 5 mm when set.");
+    }
   }
 
   const nippleId = (o.nipple || "").trim();
@@ -380,6 +401,8 @@ function analyzeSpokeForm(form: HTMLFormElement): SpokeFormModel {
     rOff,
     hole,
     nip,
+    rimHoleMm,
+    spokeDiamMm,
     nippleId,
     wheelSizeKey,
     wheelBsdMm,
@@ -407,6 +430,8 @@ function renderSpokeResultsToResultsCol(
   const rOff = m.rOff;
   const hole = m.hole;
   const nip = m.nip;
+  const rimHoleMm = m.rimHoleMm;
+  const spokeDiamMm = m.spokeDiamMm;
   const nippleId = m.nippleId;
   const wheelSizeKey = m.wheelSizeKey;
   const wheelBsdMm = m.wheelBsdMm;
@@ -426,6 +451,8 @@ function renderSpokeResultsToResultsCol(
     rightFlangeOffsetMm: rOff,
     flangeHoleDiameterMm: hole,
     nippleCorrectionMm: nip,
+    rimHoleDiameterMm: rimHoleMm,
+    spokeDiameterMm: spokeDiamMm,
   });
 
   const leftSpokes = spokes.filter((s) => s.side === "left");
@@ -522,6 +549,8 @@ function renderSpokeResultsToResultsCol(
             crosses,
             flangeHoleDiameterMm: hole,
             nippleCorrectionMm: nip,
+            rimHoleDiameterMm: rimHoleMm,
+            spokeDiameterMm: spokeDiamMm,
           },
         );
         const orderedRaw = o.ordered_spoke_length_mm ?? "";
@@ -580,7 +609,7 @@ function renderSpokeResultsToResultsCol(
     resultsCol.innerHTML = `
       <section class="results prose spoke-build-summary" role="region" aria-label="Spoke build summary">
         <div class="tension-stat-block-title">Build summary</div>
-        <p class="hint spoke-build-summary-hint">Averages per flange side (odd spoke # = left, even = right). Head clearance: hole spacing × cos(lacing angle) − hub hole diameter (other tools may use a different hole term). Rim entry angle in the wheel plane. <strong>Tension ratio</strong> (axial balance, stiffness ∝ 1/spoke length): <strong>left = 100%</strong>, right = target % of left using the same center-plane flange offsets as spoke length. Wrong offsets skew this badly.</p>
+        <p class="hint spoke-build-summary-hint">Averages per flange side (odd spoke # = left, even = right). Ordering length = triangle − hub hole Ø/2 + nipple correction − optional <strong>rim/spoke seat</strong> (rim + spoke)/10 mm when both rim hole Ø and spoke Ø are set. Head clearance: pitch × cos(lacing angle) − hub hole Ø. Rim entry angle in the wheel plane. <strong>Tension ratio</strong> (axial balance): <strong>left = 100%</strong>, right = % of left. Wrong offsets skew ratio badly.</p>
         <table class="spoke-build-summary-table">
           <thead>
             <tr>
@@ -736,6 +765,17 @@ export function renderSpokes(container: HTMLElement): void {
         <div class="field">
           <label for="id_nipple_correction_mm">Nipple correction (mm)</label>
           <input type="number" name="nipple_correction_mm" id="id_nipple_correction_mm" step="any" value="0" />
+        </div>
+        <div class="field-span field-row field-row-2">
+          <div class="field">
+            <label for="id_rim_hole_diameter_mm">Rim hole Ø (mm)</label>
+            <input type="number" name="rim_hole_diameter_mm" id="id_rim_hole_diameter_mm" min="0" max="10" step="any" placeholder="e.g. 2.6" />
+            <p class="hint">Optional. With <strong>spoke Ø</strong>, shortens ordering length by (rim + spoke) / 10 mm to match many calculators.</p>
+          </div>
+          <div class="field">
+            <label for="id_spoke_diameter_mm">Spoke Ø (mm)</label>
+            <input type="number" name="spoke_diameter_mm" id="id_spoke_diameter_mm" min="0" max="5" step="any" placeholder="e.g. 2.0" />
+          </div>
         </div>
         <fieldset class="field-span section-fieldset">
           <legend>Spoke tip detail (optional)</legend>
