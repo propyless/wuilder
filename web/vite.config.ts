@@ -6,5 +6,6 @@ export default defineConfig({
   publicDir: "public",
   test: {
     globals: true,
+    environment: "happy-dom",
   },
 });

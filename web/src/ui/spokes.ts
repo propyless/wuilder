@@ -462,8 +462,9 @@ function renderSpokeResultsToResultsCol(
     spokeCount: sc,
     side: "right",
   });
-  const tensionLeftPctOfRight = illustrativeOtherAsPctOfReference({
-    referenceSide: "right",
+  /** Right-side tension as % of left (left = 100% ref). Matches common calculators; reciprocal of “right = 100% ref”. */
+  const tensionRightPctOfLeft = illustrativeOtherAsPctOfReference({
+    referenceSide: "left",
     wLeftMm: lOff,
     wRightMm: rOff,
     avgLenLeftMm,
@@ -579,7 +580,7 @@ function renderSpokeResultsToResultsCol(
     resultsCol.innerHTML = `
       <section class="results prose spoke-build-summary" role="region" aria-label="Spoke build summary">
         <div class="tension-stat-block-title">Build summary</div>
-        <p class="hint spoke-build-summary-hint">Averages per flange side (odd spoke # = left, even = right). Head clearance: hole spacing × cos(lacing angle) − hub hole diameter. Rim entry angle in the wheel plane. <strong>Tension ratio</strong> uses the same center-plane flange offsets as spoke length (see form hints); right = 100% ref., left = target % of right for axial balance (compare with TM-1). Wrong offsets skew this badly.</p>
+        <p class="hint spoke-build-summary-hint">Averages per flange side (odd spoke # = left, even = right). Head clearance: hole spacing × cos(lacing angle) − hub hole diameter (other tools may use a different hole term). Rim entry angle in the wheel plane. <strong>Tension ratio</strong> (axial balance, stiffness ∝ 1/spoke length): <strong>left = 100%</strong>, right = target % of left using the same center-plane flange offsets as spoke length. Wrong offsets skew this badly.</p>
         <table class="spoke-build-summary-table">
           <thead>
             <tr>
@@ -606,8 +607,8 @@ function renderSpokeResultsToResultsCol(
             </tr>
             <tr>
               <th scope="row">Spoke tension ratio</th>
-              <td>${tensionLeftPctOfRight.toFixed(0)}%</td>
               <td>100%</td>
+              <td>${tensionRightPctOfLeft.toFixed(0)}%</td>
             </tr>
           </tbody>
         </table>
