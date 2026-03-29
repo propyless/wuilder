@@ -2,6 +2,10 @@
 
 Wheel-building helpers: **spoke length** and **TM-1 tension map**. The main UI is a static TypeScript app under `web/` (hash routes `#/`, `#/spokes`, `#/tension`). The original Django implementation remains in `legacy/` for reference, parity checks, and Python tests.
 
+## AI assistance and accuracy
+
+This project—including app code, tests, and much of the documentation—was **written with the help of AI coding tools**. Outputs were not blindly trusted: **manual checks** were run against **other spoke and tension calculators** (and, where applicable, the legacy Python implementation and its tests) to catch gross errors. Even so, **verify critical builds** with your own measurements, manufacturer data, and established references (for example Park’s current TM-1 chart). The authors and tools here are **not** a substitute for workshop judgment.
+
 ## Static app (`web/`)
 
 ```bash
