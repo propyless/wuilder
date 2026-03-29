@@ -12,11 +12,21 @@ npm test             # Vitest (math aligned with legacy Django tests)
 npm run build        # output in web/dist/
 ```
 
-For **GitHub Pages** (project site at `https://<user>.github.io/<repo>/`), set the Vite base when building, for example:
+For **GitHub Pages** (project site at `https://<user>.github.io/<repo>/`), set the Vite base when building locally, for example:
 
 ```bash
 cd web && VITE_BASE=/<your-repo-name>/ npm run build
 ```
+
+### Pages deploy from GitHub Actions
+
+The workflow [`.github/workflows/web.yml`](.github/workflows/web.yml) builds on push to `main`, uploads `web/dist`, and runs `actions/deploy-pages@v4`. **One-time repo setup** (otherwise deploy fails with `HttpError: Not Found` / “Failed to create deployment”):
+
+1. Open **Settings → Pages** for the repository.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions** (not “Deploy from a branch”). Save if prompted.
+3. Push to `main` again or **Re-run failed jobs** on the last workflow run.
+
+If Pages still fails: confirm the repo is allowed to use Pages (public repos work on free plans; **private** repos under an **organization** may need a paid plan or org policy). The environment name `github-pages` is created when Actions-based Pages is enabled.
 
 **Printing:** Use the browser’s print dialog on any tool page. Styles in `web/src/styles/print.css` hide navigation and buttons, stack wide layouts, and keep wheel / section diagrams in color where the browser allows. Collapsed **details** blocks (flange calculator, hub geometry, etc.) open automatically for the print job.
 

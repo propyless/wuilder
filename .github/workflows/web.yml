@@ -1,3 +1,5 @@
+# Requires: Repo Settings → Pages → Source = GitHub Actions (not “Deploy from a branch”).
+# Otherwise deploy-pages fails with 404 / “Failed to create deployment”.
 name: web
 
 on:
