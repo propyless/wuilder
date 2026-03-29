@@ -236,8 +236,26 @@ export interface SectionDetail {
   spokeThreadH: number;
   dimSeatX: number;
   dimRimX: number;
+  dimWellX: number;
+  dimInnerWallX: number;
+  dimBridgeX: number;
   seatMidDy: number;
   rimMidDy: number;
+  innerLeftX: number;
+  innerRightX: number;
+  outerLeftX: number;
+  outerRightX: number;
+  topCutLeftX: number;
+  topCutRightX: number;
+  topCutBottomY: number;
+  rimBottomY: number;
+  wellDepthMm: number;
+  outerWidthMm: number;
+  openingWidthMm: number;
+  innerWidthMm: number;
+  innerWallThicknessMm: number;
+  bridgeThicknessMm: number;
+  rimDepthMm: number;
 }
 
 export function buildSectionDetail(
@@ -245,6 +263,7 @@ export function buildSectionDetail(
   params: {
     wellDepthMm: number;
     innerWidthMm: number;
+    outerWidthMm?: number;
     tipFromSeatMm: number;
     spokeThreadLengthMm?: number;
     innerWallDepthMm?: number | null;
@@ -326,6 +345,9 @@ export function buildSectionDetail(
       C = smooth U-bed crown
   */
   const innerW = params.innerWidthMm * s;
+  const outerW = (params.outerWidthMm ?? params.innerWidthMm) * s;
+  const xOutL = cx - outerW / 2;
+  const xOutR = cx + outerW / 2;
   const xInL = cx - innerW / 2;
   const xInR = cx + innerW / 2;
 
@@ -352,31 +374,31 @@ export function buildSectionDetail(
       Z close
   */
   const rimPath =
-    `M ${(xInL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
-    `L ${(xInR - r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
-    `Q ${xInR.toFixed(2)} ${rimOuterY.toFixed(2)} ${xInR.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
-    `L ${xInR.toFixed(2)} ${bendY.toFixed(2)} ` +
-    `C ${xInR.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `M ${(xOutL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `L ${(xOutR - r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `Q ${xOutR.toFixed(2)} ${rimOuterY.toFixed(2)} ${xOutR.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
+    `L ${xOutR.toFixed(2)} ${bendY.toFixed(2)} ` +
+    `C ${xOutR.toFixed(2)} ${seatY.toFixed(2)} ` +
     `${(cx + uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
     `${cx.toFixed(2)} ${uBotY.toFixed(2)} ` +
     `C ${(cx - uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
-    `${xInL.toFixed(2)} ${seatY.toFixed(2)} ` +
-    `${xInL.toFixed(2)} ${bendY.toFixed(2)} ` +
-    `L ${xInL.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
-    `Q ${xInL.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xInL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `${xOutL.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `${xOutL.toFixed(2)} ${bendY.toFixed(2)} ` +
+    `L ${xOutL.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
+    `Q ${xOutL.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xOutL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
     "Z";
   const rimOuterBorderPath =
-    `M ${(xInL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
-    `Q ${xInL.toFixed(2)} ${rimOuterY.toFixed(2)} ${xInL.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
-    `L ${xInL.toFixed(2)} ${bendY.toFixed(2)} ` +
-    `C ${xInL.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `M ${(xOutL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
+    `Q ${xOutL.toFixed(2)} ${rimOuterY.toFixed(2)} ${xOutL.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
+    `L ${xOutL.toFixed(2)} ${bendY.toFixed(2)} ` +
+    `C ${xOutL.toFixed(2)} ${seatY.toFixed(2)} ` +
     `${(cx - uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
     `${cx.toFixed(2)} ${uBotY.toFixed(2)} ` +
     `C ${(cx + uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
-    `${xInR.toFixed(2)} ${seatY.toFixed(2)} ` +
-    `${xInR.toFixed(2)} ${bendY.toFixed(2)} ` +
-    `L ${xInR.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
-    `Q ${xInR.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xInR - r).toFixed(2)} ${rimOuterY.toFixed(2)}`;
+    `${xOutR.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `${xOutR.toFixed(2)} ${bendY.toFixed(2)} ` +
+    `L ${xOutR.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
+    `Q ${xOutR.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xOutR - r).toFixed(2)} ${rimOuterY.toFixed(2)}`;
 
   /*
     Cavity is its own filled path layered on top (no even-odd fill rule).
@@ -555,6 +577,9 @@ export function buildSectionDetail(
 
   const dimSeatX = shankR + 20;
   const dimRimX = shankL - 20;
+  const dimWellX = xInL - 24;
+  const dimInnerWallX = xInR + 10;
+  const dimBridgeX = xInR + 22;
 
   const seatMidDy = (seatY - tipY) / 2 + 4;
   const rimMidDy = (tipY - rimOuterY) / 2 + 4;
@@ -588,7 +613,25 @@ export function buildSectionDetail(
     spokeThreadH: spokeThreadBotY - spokeTopY,
     dimSeatX,
     dimRimX,
+    dimWellX,
+    dimInnerWallX,
+    dimBridgeX,
     seatMidDy,
     rimMidDy,
+    innerLeftX: xInL,
+    innerRightX: xInR,
+    outerLeftX: xOutL,
+    outerRightX: xOutR,
+    topCutLeftX: topCutL,
+    topCutRightX: topCutR,
+    topCutBottomY: topCutBotY,
+    rimBottomY: uBotY,
+    wellDepthMm: params.wellDepthMm,
+    outerWidthMm: outerW / s,
+    openingWidthMm: (topCutR - topCutL) / s,
+    innerWidthMm: params.innerWidthMm,
+    innerWallThicknessMm: (cavTopY - rimOuterY) / s,
+    bridgeThicknessMm: (cavTopY - topCutBotY) / s,
+    rimDepthMm: (uBotY - rimOuterY) / s,
   };
 }

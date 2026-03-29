@@ -26,29 +26,13 @@ function detailStatsLine(fit: NippleFit): string {
   return `Thread engagement: <strong>${fmt1(fit.threadEngagementMm)}</strong> mm${tipPart} &middot; <strong${rimCls}>${fmt1(fit.tipToRimOuterMm)}</strong> mm from rim edge`;
 }
 
-function tipSeatLabel(fit: NippleFit, detail: SectionDetail): string {
-  const t = fit.tipFromSeatMm;
-  if (t > 1e-6) {
-    return `<text class="det-dim-label" text-anchor="start" x="${fmt2(detail.dimSeatX)}" dx="6" y="${fmt2(detail.seatY)}" dy="${fmt2(detail.seatMidDy)}">${fmt1(fit.tipFromSeatMm)} mm inside</text>`;
-  }
-  if (t < -1e-6) {
-    return `<text class="det-dim-label" text-anchor="start" x="${fmt2(detail.dimSeatX)}" dx="6" y="${fmt2(detail.tipY)}" dy="${fmt2(detail.seatMidDy)}">${fmt1(fit.tipFromSeatMm)} mm into cavity</text>`;
-  }
-  return `<text class="det-dim-label" text-anchor="start" x="${fmt2(detail.dimSeatX)}" dx="6" y="${fmt2(detail.seatY)}" dy="-4">at seat</text>`;
-}
-
 /** Zoomed nipple / spoke tip -- matches legacy section_detail_svg.html */
 export function renderSectionDetailHtml(detail: SectionDetail, fit: NippleFit): string {
   const d = detail;
-
-  const innerWallRef = d.hasInnerWallDepth
-    ? `<line class="det-ref" x1="20" y1="${fmt2(d.rimCavityTopY)}" x2="${fmt0(d.viewW)}" y2="${fmt2(d.rimCavityTopY)}" />`
-    : "";
-
-  const innerWallLabel = d.hasInnerWallDepth
-    ? `<text class="det-label" x="4" y="${fmt2(d.rimCavityTopY)}" dy="-3">Inner wall</text>
-        <text class="det-label" x="4" y="${fmt2(d.seatY)}" dy="-3">Nipple seat</text>`
-    : `<text class="det-label" x="4" y="${fmt2(d.seatY)}" dy="-3">Inner wall / seat</text>`;
+  const topOuterDimY = d.rimOuterY - 22;
+  const topInnerDimY = d.rimOuterY - 10;
+  const depthDimX = d.innerRightX + 34;
+  const tipToInnerWallMm = (d.tipY - d.rimCavityTopY) / d.scale;
 
   const threadRect =
     d.spokeThreadH > 0
@@ -72,17 +56,21 @@ export function renderSectionDetailHtml(detail: SectionDetail, fit: NippleFit): 
           .det-thread-zone { fill: #8fa87a; fill-opacity: 0.45; stroke: #4a6630; stroke-width: 0.8; stroke-dasharray: 3 2; }
           .det-spoke { fill: #7a7a7a; stroke: #4a4a4a; stroke-width: 0.6; }
           .det-spoke-tip-cap { fill: #c44040; }
-          .det-ref { stroke: #b0a899; stroke-width: 0.7; stroke-dasharray: 2 3; }
-          .det-dim { stroke: #8a3535; stroke-width: 0.9; fill: none; }
-          .det-dim-label { fill: #8a3535; font-size: 11px; font-family: system-ui, sans-serif; font-weight: 600; }
+          .det-centerline { stroke: #3d3931; stroke-width: 0.9; stroke-dasharray: 5 4; opacity: 0.75; }
+          .det-ext { stroke: #2d2d2d; stroke-width: 0.65; }
+          .det-dim { stroke: #1f1f1f; stroke-width: 0.9; fill: none; }
+          .det-dim-label { fill: #1f1f1f; font-size: 11px; font-family: system-ui, sans-serif; font-weight: 600; }
           .det-label { fill: #5c574e; font-size: 10px; font-family: system-ui, sans-serif; }
-          .det-arrow { fill: #8a3535; }
+          .det-arrow { fill: #1f1f1f; }
         </style>
         <marker id="det-arrow-up" markerWidth="6" markerHeight="6" refX="3" refY="6" orient="auto">
           <path d="M0,6 L3,0 L6,6" class="det-arrow"/>
         </marker>
         <marker id="det-arrow-down" markerWidth="6" markerHeight="6" refX="3" refY="0" orient="auto">
           <path d="M0,0 L3,6 L6,0" class="det-arrow"/>
+        </marker>
+        <marker id="det-arrow-end" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto-start-reverse">
+          <path d="M0,0 L6,3 L0,6 Z" class="det-arrow"/>
         </marker>
         <pattern id="spoke-thread-hatch" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
           <line x1="0" y1="0" x2="0" y2="2.4" stroke="#3a3a3a" stroke-width="0.5"/>
@@ -93,22 +81,29 @@ export function renderSectionDetailHtml(detail: SectionDetail, fit: NippleFit): 
       <path class="det-rim-top-cutout" d="${d.rimTopCutoutPath}" />
       <path class="det-rim-top-cutout-border" d="${d.rimTopCutoutBorderPath}" />
       <path class="det-rim-cavity" d="${d.rimCavityPath}" />
+      <line class="det-centerline" x1="${fmt2(d.cx)}" y1="${fmt2(d.rimOuterY - 24)}" x2="${fmt2(d.cx)}" y2="${fmt2(d.rimBottomY)}" />
       <path class="det-nipple-head" d="${d.nippleHeadPath}" />
       <path class="det-nipple-shank" d="${d.nippleBodyPath}" />
       <path class="det-thread-zone" d="${d.nippleThreadZonePath}" />
-      ${innerWallRef}
-      <line class="det-ref" x1="20" y1="${fmt2(d.seatY)}" x2="${fmt0(d.viewW)}" y2="${fmt2(d.seatY)}" />
-      <line class="det-ref" x1="20" y1="${fmt2(d.barrelEndY)}" x2="${fmt0(d.viewW)}" y2="${fmt2(d.barrelEndY)}" />
-      ${innerWallLabel}
-      <text class="det-label" x="4" y="${fmt2(d.barrelEndY)}" dy="12">Barrel end</text>
       <rect class="det-spoke" x="${fmt2(d.spokeX)}" y="${fmt2(d.spokeTopY)}" width="${fmt2(d.spokeW)}" height="${fmt2(d.spokeH)}" />
       ${threadRect}
       <rect class="det-spoke-tip-cap" x="${fmt2(d.spokeX)}" y="${fmt2(d.spokeTopY)}" width="${fmt2(d.spokeW)}" height="2" />
-      <text class="det-dim-label" x="${fmt2(d.cx)}" y="${fmt2(d.spokeTopY)}" dx="${fmt2(d.spokeW)}" dy="-4">spoke tip</text>
-      <line class="det-dim" x1="${fmt2(d.dimSeatX)}" y1="${fmt2(d.tipY)}" x2="${fmt2(d.dimSeatX)}" y2="${fmt2(d.seatY)}" marker-start="url(#det-arrow-up)" marker-end="url(#det-arrow-down)" />
-      ${tipSeatLabel(fit, d)}
-      <line class="det-dim" x1="${fmt2(d.dimRimX)}" y1="${fmt2(d.tipY)}" x2="${fmt2(d.dimRimX)}" y2="${fmt2(d.rimOuterY)}" marker-start="url(#det-arrow-down)" marker-end="url(#det-arrow-up)" />
-      <text class="det-dim-label" text-anchor="end" x="${fmt2(d.dimRimX)}" dx="-6" y="${fmt2(d.rimOuterY)}" dy="${fmt2(d.rimMidDy)}">${fmt1(fit.tipToRimOuterMm)} mm</text>
+      <line class="det-ext" x1="${fmt2(d.outerLeftX)}" y1="${fmt2(d.rimOuterY)}" x2="${fmt2(d.outerLeftX)}" y2="${fmt2(topOuterDimY)}" />
+      <line class="det-ext" x1="${fmt2(d.outerRightX)}" y1="${fmt2(d.rimOuterY)}" x2="${fmt2(d.outerRightX)}" y2="${fmt2(topOuterDimY)}" />
+      <line class="det-dim" x1="${fmt2(d.outerLeftX)}" y1="${fmt2(topOuterDimY)}" x2="${fmt2(d.outerRightX)}" y2="${fmt2(topOuterDimY)}" marker-start="url(#det-arrow-end)" marker-end="url(#det-arrow-end)" />
+      <text class="det-dim-label" text-anchor="middle" x="${fmt2(d.cx)}" y="${fmt2(topOuterDimY)}" dy="-4">${fmt1(d.outerWidthMm)} mm</text>
+      <line class="det-ext" x1="${fmt2(d.innerLeftX)}" y1="${fmt2(d.rimOuterY)}" x2="${fmt2(d.innerLeftX)}" y2="${fmt2(topInnerDimY)}" />
+      <line class="det-ext" x1="${fmt2(d.innerRightX)}" y1="${fmt2(d.rimOuterY)}" x2="${fmt2(d.innerRightX)}" y2="${fmt2(topInnerDimY)}" />
+      <line class="det-dim" x1="${fmt2(d.innerLeftX)}" y1="${fmt2(topInnerDimY)}" x2="${fmt2(d.innerRightX)}" y2="${fmt2(topInnerDimY)}" marker-start="url(#det-arrow-end)" marker-end="url(#det-arrow-end)" />
+      <text class="det-dim-label" text-anchor="middle" x="${fmt2(d.cx)}" y="${fmt2(topInnerDimY)}" dy="-4">${fmt1(d.innerWidthMm)} mm</text>
+      <line class="det-ext" x1="${fmt2(d.outerRightX)}" y1="${fmt2(d.rimOuterY)}" x2="${fmt2(depthDimX)}" y2="${fmt2(d.rimOuterY)}" />
+      <line class="det-ext" x1="${fmt2(d.cx)}" y1="${fmt2(d.rimBottomY)}" x2="${fmt2(depthDimX)}" y2="${fmt2(d.rimBottomY)}" />
+      <line class="det-dim" x1="${fmt2(depthDimX)}" y1="${fmt2(d.rimOuterY)}" x2="${fmt2(depthDimX)}" y2="${fmt2(d.rimBottomY)}" marker-start="url(#det-arrow-up)" marker-end="url(#det-arrow-down)" />
+      <text class="det-dim-label" text-anchor="middle" x="${fmt2(depthDimX)}" y="${fmt2((d.rimOuterY + d.rimBottomY) / 2)}" transform="rotate(90 ${fmt2(depthDimX)} ${fmt2((d.rimOuterY + d.rimBottomY) / 2)})">${fmt1(d.rimDepthMm)} mm</text>
+      <line class="det-ext" x1="${fmt2(d.cx)}" y1="${fmt2(d.tipY)}" x2="${fmt2(d.dimRimX)}" y2="${fmt2(d.tipY)}" />
+      <line class="det-ext" x1="${fmt2(d.innerLeftX)}" y1="${fmt2(d.rimCavityTopY)}" x2="${fmt2(d.dimRimX)}" y2="${fmt2(d.rimCavityTopY)}" />
+      <line class="det-dim" x1="${fmt2(d.dimRimX)}" y1="${fmt2(d.rimCavityTopY)}" x2="${fmt2(d.dimRimX)}" y2="${fmt2(d.tipY)}" marker-start="url(#det-arrow-up)" marker-end="url(#det-arrow-down)" />
+      <text class="det-dim-label" text-anchor="end" x="${fmt2(d.dimRimX)}" dx="-6" y="${fmt2(d.rimCavityTopY)}" dy="${fmt2((d.tipY - d.rimCavityTopY) / 2)}">${fmt1(tipToInnerWallMm)} mm</text>
     </svg>
   </div>
   <ul class="detail-legend">

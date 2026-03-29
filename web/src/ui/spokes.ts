@@ -215,9 +215,11 @@ function validateAndCompute(form: HTMLFormElement): void {
 
   const nippleId = (o.nipple || "").trim();
   const rimWStr = o.rim_inner_width_mm ?? "";
+  const rimOuterWStr = o.rim_outer_width_mm ?? "";
   const rimDStr = o.rim_well_depth_mm ?? "";
   const iwdStr = o.rim_inner_wall_depth_mm ?? "";
   let rimInnerW: number | null = null;
+  let rimOuterW: number | null = null;
   let rimWellD: number | null = null;
   if (rimWStr !== "") {
     const iw = parseFloat(rimWStr.replace(",", "."));
@@ -234,6 +236,17 @@ function validateAndCompute(form: HTMLFormElement): void {
     } else {
       rimWellD = wd;
     }
+  }
+  if (rimOuterWStr !== "") {
+    const ow = parseFloat(rimOuterWStr.replace(",", "."));
+    if (!Number.isFinite(ow) || ow < 10 || ow > 100) {
+      errors.push("Rim outer width must be between 10 and 100 mm.");
+    } else {
+      rimOuterW = ow;
+    }
+  }
+  if (rimInnerW != null && rimOuterW != null && rimOuterW < rimInnerW) {
+    errors.push("Rim outer width must be greater than or equal to rim inner width.");
   }
   const spokeThreadStr = o.spoke_thread_length_mm ?? "";
   let spokeThread = 0;
@@ -410,6 +423,7 @@ function validateAndCompute(form: HTMLFormElement): void {
         const detail = buildSectionDetail(nippleShape, {
           wellDepthMm: rimWellD,
           innerWidthMm: rimInnerW,
+          outerWidthMm: rimOuterW ?? undefined,
           tipFromSeatMm: fit.tipFromSeatMm,
           spokeThreadLengthMm: spokeThread,
           innerWallDepthMm:
@@ -538,6 +552,11 @@ export function renderSpokes(container: HTMLElement): void {
             <div class="field">
               <label for="id_rim_inner_width_mm">Rim inner width (mm)</label>
               <input type="number" name="rim_inner_width_mm" id="id_rim_inner_width_mm" min="5" max="80" step="any" />
+            </div>
+            <div class="field">
+              <label for="id_rim_outer_width_mm">Rim outer width (mm)</label>
+              <input type="number" name="rim_outer_width_mm" id="id_rim_outer_width_mm" min="10" max="100" step="any" />
+              <p class="hint">Optional; if blank, outer width follows inner width.</p>
             </div>
             <div class="field">
               <label for="id_rim_well_depth_mm">Rim depth (mm)</label>
