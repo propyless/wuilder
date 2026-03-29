@@ -14,7 +14,7 @@ function fmt0(n: number): string {
 }
 
 function detailStatsLine(fit: NippleFit): string {
-  let tipPart = "";
+  let tipPart: string;
   if (fit.tipFromSeatMm > 1e-6) {
     tipPart = ` &middot; <strong>${fmt1(fit.tipFromSeatMm)}</strong> mm inside nipple`;
   } else if (Math.abs(fit.tipFromSeatMm) <= 1e-6) {

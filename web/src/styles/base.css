@@ -1,0 +1,252 @@
+:root {
+  --bg: #f6f4f0;
+  --fg: #1a1814;
+  --muted: #5c574e;
+  --accent: #8b4513;
+  --border: #d4cfc4;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: #fffef9;
+}
+
+.nav {
+  max-width: min(100%, 52rem);
+  margin: 0 auto;
+  padding: 0.85rem clamp(0.75rem, 3vw, 1.25rem);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.nav-links {
+  font-size: 0.95rem;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.nav-links a:hover {
+  color: var(--accent);
+}
+
+.nav-links a + a {
+  margin-left: 0.85rem;
+}
+
+.nav-links a.nav-link--active {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--accent);
+}
+
+.main {
+  max-width: min(100%, 52rem);
+  margin: 0 auto;
+  padding: 2rem clamp(0.75rem, 3vw, 1.25rem) 3rem;
+}
+
+/* Tension + Spokes: wide main/nav (set `page-wide` on <body> for those routes) */
+body.page-wide .nav {
+  max-width: min(100%, 92rem);
+  padding-left: clamp(0.5rem, 2vw, 1rem);
+  padding-right: clamp(0.5rem, 2vw, 1rem);
+}
+
+body.page-wide .main {
+  max-width: min(100%, 92rem);
+  padding-left: clamp(0.5rem, 2vw, 1rem);
+  padding-right: clamp(0.5rem, 2vw, 1rem);
+}
+
+.prose h1 {
+  margin: 0 0 0.75rem;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.prose .lede {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  color: var(--muted);
+}
+
+.prose p {
+  margin: 0 0 0.85rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem 1.25rem;
+  margin: 1.5rem 0 2rem;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+}
+
+.field-span {
+  grid-column: 1 / -1;
+}
+
+.field-row {
+  display: grid;
+  gap: 1rem 1.25rem;
+}
+
+.field-row-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field-row-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--fg);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fffef9;
+  font-size: 1rem;
+}
+
+.hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.error {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #8a2b2b;
+}
+
+.form-errors {
+  grid-column: 1 / -1;
+  color: #8a2b2b;
+  font-size: 0.9rem;
+}
+
+.btn {
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: 4px;
+  background: var(--fg);
+  color: #fffef9;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn:hover {
+  background: var(--accent);
+}
+
+.btn--clear {
+  background: #fff5f5;
+  color: #8a2424;
+  border: 1px solid #c45c5c;
+  font-weight: 600;
+}
+
+.btn--clear:hover {
+  background: #8a2424;
+  color: #fffef9;
+  border-color: #8a2424;
+}
+
+.spoke-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tension-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tension-clear-btn {
+  min-width: 5rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.results {
+  margin-top: 2rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+  margin: 0.75rem 0 1.5rem;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.swatch {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  vertical-align: middle;
+}
+

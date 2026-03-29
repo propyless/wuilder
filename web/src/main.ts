@@ -4,6 +4,13 @@ import { renderSavedBuilds } from "./ui/savedBuilds";
 import { renderSpokes } from "./ui/spokes";
 import { renderTension } from "./ui/tension";
 
+/** Hash fragment path (after `#/`) → full-page renderer. Unknown keys fall back to home. */
+const ROUTE_TABLE: Record<string, (root: HTMLElement) => void> = {
+  spokes: renderSpokes,
+  tension: renderTension,
+  builds: renderSavedBuilds,
+};
+
 function getAppRoot(): HTMLElement {
   const el = document.querySelector<HTMLElement>("#app");
   if (!el) throw new Error("#app missing");
@@ -39,16 +46,9 @@ function render(): void {
   const route = parseHash();
   updateSiteNavActive(route);
   setBodyPageClass(route);
-  if (route === "spokes") {
-    renderSpokes(root);
-    return;
-  }
-  if (route === "tension") {
-    renderTension(root);
-    return;
-  }
-  if (route === "builds") {
-    renderSavedBuilds(root);
+  const page = ROUTE_TABLE[route];
+  if (page) {
+    page(root);
     return;
   }
   renderHome(root);

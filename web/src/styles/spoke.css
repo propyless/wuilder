@@ -1,0 +1,353 @@
+/* Spoke calculator layout: form left, lengths + wheel + detail right (like tension map).
+   Avoid 1fr on the form track — it stretches the first column on wide viewports and
+   pushes the wheel to the far edge. Cap both tracks so the block stays compact. */
+.spoke-page-layout {
+  display: grid;
+  grid-template-columns: minmax(0, min(42rem, 100%)) minmax(16rem, min(32rem, 100%));
+  gap: 0.75rem 1.5rem;
+  align-items: start;
+  justify-content: start;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.spoke-page-prose {
+  grid-column: 1 / -1;
+}
+
+.spoke-page-form-col {
+  min-width: 0;
+  max-width: min(100%, 42rem);
+}
+
+.spoke-page-form-grid {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+}
+
+.spoke-page-results-col {
+  min-width: 0;
+}
+
+.spoke-page-results-col .results {
+  margin-top: 0;
+}
+
+.spoke-page-results-placeholder {
+  margin: 0;
+  padding: 0.35rem 0;
+}
+
+.spoke-page-results-col .section-panel {
+  margin-top: 1rem;
+}
+
+.spoke-build-summary-table {
+  width: 100%;
+  max-width: 28rem;
+  margin: 0.6rem 0 0;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.spoke-build-summary-table th,
+.spoke-build-summary-table td {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border);
+  text-align: right;
+}
+
+.spoke-build-summary-table thead th:first-child,
+.spoke-build-summary-table tbody th[scope="row"] {
+  text-align: left;
+  font-weight: 600;
+  color: var(--fg);
+  background: rgba(255, 254, 249, 0.9);
+}
+
+.spoke-build-summary-table thead th {
+  background: rgba(245, 243, 239, 0.95);
+}
+
+.spoke-build-summary-hint {
+  margin-top: 0.35rem;
+  max-width: 36rem;
+}
+
+.spoke-page-results-col .section-svg-wrap {
+  max-width: 100%;
+}
+
+@media (max-width: 56rem) {
+  .spoke-page-layout {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .spoke-page-form-col {
+    max-width: 100%;
+  }
+
+  .field-row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .field-row-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Spoke calculator: reuse tension stat card look */
+.spoke-page-lengths-card {
+  max-width: 100%;
+}
+
+.spoke-length-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 0.1rem;
+}
+
+.spoke-length-swatch {
+  display: block;
+  margin: 0.4rem auto 0;
+}
+
+/* Flange offset calculator (spoke page) */
+.flange-offset-calc-details {
+  margin: 0.5rem 0 1rem;
+  padding: 0.45rem 0.55rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 254, 249, 0.75);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.flange-offset-calc-summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--fg);
+}
+
+.flange-offset-calc-inner {
+  margin-top: 0.45rem;
+}
+
+.flange-offset-calc-svg {
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  height: auto;
+  margin: 0.35rem 0 0.65rem;
+}
+
+.flange-calc-hub-body {
+  fill: #e8e4dc;
+  stroke: #6a655c;
+  stroke-width: 1.2;
+}
+
+.flange-calc-center-line {
+  stroke: #b03030;
+  stroke-width: 1.8;
+}
+
+.flange-calc-svg-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--fg);
+  font-family: system-ui, sans-serif;
+}
+
+.flange-calc-svg-small {
+  font-size: 10px;
+  fill: var(--muted);
+  font-family: system-ui, sans-serif;
+}
+
+.flange-offset-calc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.5rem 0.75rem;
+  margin: 0.5rem 0 0.65rem;
+}
+
+.flange-calc-field label {
+  font-size: 0.82rem;
+}
+
+.flange-offset-calc-results {
+  margin: 0.35rem 0 0.25rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(232, 245, 232, 0.5);
+  border: 1px solid rgba(120, 160, 120, 0.35);
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.84rem;
+}
+
+.flange-offset-calc-result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.flange-offset-calc-results dt {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.flange-offset-calc-results dd {
+  margin: 0;
+  font-weight: 700;
+  color: #1a5a2e;
+}
+
+.flange-offset-calc-result-lr dd {
+  font-size: 1rem;
+}
+
+.flange-calc-hint--error {
+  color: #8b2500;
+}
+
+.flange-offset-calc-actions {
+  margin: 0.55rem 0 0;
+}
+
+.wheel-wrap {
+  max-width: min(100%, 28rem);
+  margin: 0 auto;
+  background: #fffef9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.wheel-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.wheel-rim {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 2;
+}
+
+.wheel-hub {
+  fill: #eae6dc;
+  stroke: var(--muted);
+  stroke-width: 1.25;
+}
+
+.section-fieldset {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem 1rem;
+  margin: 0;
+}
+
+.section-fieldset legend {
+  font-weight: 600;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+  padding: 0 0.4rem;
+}
+
+.section-fieldset .form-grid {
+  margin: 0.5rem 0 0;
+}
+
+.section-form {
+  margin-bottom: 1rem;
+}
+
+.section-panel {
+  margin-top: 1.5rem;
+}
+
+.section-stats {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin: 0 0 0.75rem;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.section-svg-wrap {
+  max-width: min(100%, 36rem);
+  margin: 0 auto;
+  background: #fffef9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.section-svg-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.prose.note {
+  margin-top: 1.5rem;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.warn {
+  color: #8a2b2b;
+}
+
+.detail-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.detail-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-dashed {
+  border-style: dashed;
+}
+
+.legend-line {
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  border-top: 2px solid;
+  flex-shrink: 0;
+}
+
+.tm-readings {
+  width: 100%;
+  max-width: 100%;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+}
+
