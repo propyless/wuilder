@@ -10,7 +10,7 @@ Prefer **one commit per finished bullet** (or a tightly related pair).
 ## Polish
 
 - [ ] **Tension hub panel:** Optional richer side-view schematic (hub body / PCD hints) while keeping “illustrative, not measured” copy.
-- [ ] **Print / export:** Print-friendly CSS for summaries or diagrams (static app).
+- [x] **Print / export:** Print-friendly CSS (`web/src/styles/print.css`); `<details>` open on print via `main.ts`.
 - [ ] **Test parity:** Spot-check critical paths against `legacy/core/tests/` and add Vitest cases where gaps show up.
 
 ## Optional / later

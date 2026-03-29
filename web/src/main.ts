@@ -56,3 +56,21 @@ function render(): void {
 
 window.addEventListener("hashchange", render);
 render();
+
+/** Open all <details> for print so flange calc, hub geometry, etc. are not collapsed. */
+let detailsClosedBeforePrint: HTMLDetailsElement[] = [];
+window.addEventListener("beforeprint", () => {
+  detailsClosedBeforePrint = [];
+  document.querySelectorAll("details").forEach((el) => {
+    if (!el.open) {
+      detailsClosedBeforePrint.push(el);
+      el.open = true;
+    }
+  });
+});
+window.addEventListener("afterprint", () => {
+  detailsClosedBeforePrint.forEach((el) => {
+    el.open = false;
+  });
+  detailsClosedBeforePrint = [];
+});
