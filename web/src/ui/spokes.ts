@@ -60,6 +60,22 @@ const LENGTH_COLORS = [
   "#8f4725",
 ];
 
+const WHEEL_BSD_MM: Record<string, number> = {
+  "700c-29": 622,
+  "27.5": 584,
+  "26": 559,
+};
+
+function wheelSizeOptions(selected: string): string {
+  const opts = [
+    `<option value="">— Select wheel size —</option>`,
+    `<option value="700c-29"${selected === "700c-29" ? " selected" : ""}>700c / 29&quot; (BSD 622)</option>`,
+    `<option value="27.5"${selected === "27.5" ? " selected" : ""}>27.5&quot; (BSD 584)</option>`,
+    `<option value="26"${selected === "26" ? " selected" : ""}>26&quot; (BSD 559)</option>`,
+  ];
+  return opts.join("");
+}
+
 function spokeOptions(selected: number): string {
   const opts: string[] = [];
   for (let n = 12; n <= 52; n += 2) {
@@ -214,6 +230,19 @@ function validateAndCompute(form: HTMLFormElement): void {
   }
 
   const nippleId = (o.nipple || "").trim();
+  const wheelSizeKey = (o.wheel_size || "").trim();
+  let wheelBsdMm: number | null = null;
+  if (wheelSizeKey !== "") {
+    const bsd = WHEEL_BSD_MM[wheelSizeKey];
+    if (!Number.isFinite(bsd)) {
+      errors.push("Unknown wheel size.");
+    } else {
+      wheelBsdMm = bsd;
+      if (erd >= bsd) {
+        errors.push("ERD must be smaller than BSD for the selected wheel size.");
+      }
+    }
+  }
   const rimWStr = o.rim_inner_width_mm ?? "";
   const rimOuterWStr = o.rim_outer_width_mm ?? "";
   const rimDStr = o.rim_well_depth_mm ?? "";
@@ -247,6 +276,14 @@ function validateAndCompute(form: HTMLFormElement): void {
   }
   if (rimInnerW != null && rimOuterW != null && rimOuterW < rimInnerW) {
     errors.push("Rim outer width must be greater than or equal to rim inner width.");
+  }
+  if (wheelBsdMm != null && rimWellD != null) {
+    const seatFromBead = (wheelBsdMm - erd) / 2.0;
+    if (seatFromBead >= rimWellD) {
+      errors.push(
+        `Selected wheel size and ERD imply nipple seat depth ${seatFromBead.toFixed(1)} mm, which exceeds rim depth ${rimWellD.toFixed(1)} mm.`,
+      );
+    }
   }
   const spokeThreadStr = o.spoke_thread_length_mm ?? "";
   let spokeThread = 0;
@@ -380,7 +417,7 @@ function validateAndCompute(form: HTMLFormElement): void {
         shankDiameterMm: nipRow.shankDiameterMm,
         internalThreadLengthMm: nipRow.internalThreadLengthMm,
       };
-      const side = o.section_side === "left" ? "left" : "right";
+      const side = "right";
       try {
         const diagram = buildSectionLayout(
           {
@@ -408,13 +445,17 @@ function validateAndCompute(form: HTMLFormElement): void {
           orderedRaw === ""
             ? diagram.spokeLengthMm
             : parseFloat(orderedRaw.replace(",", "."));
+        const seatFromBeadMm =
+          wheelBsdMm != null ? (wheelBsdMm - erd) / 2.0 : null;
+        const seatDepthForFitMm =
+          seatFromBeadMm != null ? seatFromBeadMm : rimWellD;
         const fit = computeNippleFit({
           calculatedSpokeLengthMm: diagram.spokeLengthMm,
           orderedSpokeLengthMm: orderedLen,
           nippleBodyLengthMm: nipRow.bodyLengthMm,
           internalThreadLengthMm: nipRow.internalThreadLengthMm,
           spokeThreadLengthMm: spokeThread,
-          wellDepthMm: rimWellD,
+          wellDepthMm: seatDepthForFitMm,
         });
         const iwdParsed =
           iwdStr !== ""
@@ -424,6 +465,7 @@ function validateAndCompute(form: HTMLFormElement): void {
           wellDepthMm: rimWellD,
           innerWidthMm: rimInnerW,
           outerWidthMm: rimOuterW ?? undefined,
+          seatFromTopMm: seatFromBeadMm ?? undefined,
           tipFromSeatMm: fit.tipFromSeatMm,
           spokeThreadLengthMm: spokeThread,
           innerWallDepthMm:
@@ -431,7 +473,19 @@ function validateAndCompute(form: HTMLFormElement): void {
               ? iwdParsed
               : null,
         });
-        sectionPanelsHtml = renderSectionDetailHtml(detail, fit);
+        sectionPanelsHtml = renderSectionDetailHtml(detail, fit, {
+          wheelSizeLabel:
+            wheelSizeKey === "700c-29"
+              ? "700c / 29\""
+              : wheelSizeKey === "27.5"
+                ? "27.5\""
+                : wheelSizeKey === "26"
+                  ? "26\""
+                  : null,
+          bsdMm: wheelBsdMm,
+          seatFromBeadMm,
+          seatRadiusMm: erd / 2.0,
+        });
       } catch (e) {
         sectionPanelsHtml = `<p class="hint prose">Spoke tip diagram could not be drawn: ${e instanceof Error ? e.message : String(e)}</p>`;
       }
@@ -494,27 +548,31 @@ export function renderSpokes(container: HTMLElement): void {
     <div class="spoke-page-form-col">
       <form class="form-grid spoke-page-form-grid" id="spoke-calculator-form" novalidate data-form-persist-key="${FORM_SPOKE_KEY}">
         <div id="spoke-form-errors" class="form-errors" style="display:none"></div>
-        <div class="field">
-          <label for="id_erd_mm">ERD (mm)</label>
-          <input type="number" name="erd_mm" id="id_erd_mm" required min="200" max="700" step="any" />
-          <p class="hint">Effective rim diameter at the nipple seat.</p>
+        <div class="field-span field-row field-row-3">
+          <div class="field">
+            <label for="id_erd_mm">ERD (mm)</label>
+            <input type="number" name="erd_mm" id="id_erd_mm" required min="200" max="700" step="any" />
+            <p class="hint">Effective rim diameter at the nipple seat.</p>
+          </div>
+          <div class="field">
+            <label for="id_spoke_count">Spokes</label>
+            <select name="spoke_count" id="id_spoke_count">${spokeOptions(sc)}</select>
+          </div>
+          <div class="field">
+            <label for="id_crosses">Crosses</label>
+            <input type="number" name="crosses" id="id_crosses" required min="0" max="20" value="3" step="1" />
+            <p class="hint">Per side; same pattern on left and right.</p>
+          </div>
         </div>
-        <div class="field">
-          <label for="id_spoke_count">Spokes</label>
-          <select name="spoke_count" id="id_spoke_count">${spokeOptions(sc)}</select>
-        </div>
-        <div class="field">
-          <label for="id_crosses">Crosses</label>
-          <input type="number" name="crosses" id="id_crosses" required min="0" max="20" value="3" step="1" />
-          <p class="hint">Per side; same pattern on left and right.</p>
-        </div>
-        <div class="field">
-          <label for="id_left_flange_diameter_mm">Left flange PCD (mm)</label>
-          <input type="number" name="left_flange_diameter_mm" id="id_left_flange_diameter_mm" required min="20" max="200" step="any" />
-        </div>
-        <div class="field">
-          <label for="id_right_flange_diameter_mm">Right flange PCD (mm)</label>
-          <input type="number" name="right_flange_diameter_mm" id="id_right_flange_diameter_mm" required min="20" max="200" step="any" />
+        <div class="field-span field-row field-row-2">
+          <div class="field">
+            <label for="id_left_flange_diameter_mm">Left flange PCD (mm)</label>
+            <input type="number" name="left_flange_diameter_mm" id="id_left_flange_diameter_mm" required min="20" max="200" step="any" />
+          </div>
+          <div class="field">
+            <label for="id_right_flange_diameter_mm">Right flange PCD (mm)</label>
+            <input type="number" name="right_flange_diameter_mm" id="id_right_flange_diameter_mm" required min="20" max="200" step="any" />
+          </div>
         </div>
         ${flangePanelHtml()}
         <div class="field">
@@ -543,11 +601,9 @@ export function renderSpokes(container: HTMLElement): void {
           <p class="hint">Choose a nipple preset, rim cavity dimensions, and a positive <strong>spoke thread length</strong> to show the zoomed spoke-tip diagram.</p>
           <div class="form-grid">
             <div class="field">
-              <label for="id_section_side">Show spoke to</label>
-              <select name="section_side" id="id_section_side">
-                <option value="right">Right flange</option>
-                <option value="left">Left flange</option>
-              </select>
+              <label for="id_wheel_size">Wheel size (for nipple seat reference)</label>
+              <select name="wheel_size" id="id_wheel_size">${wheelSizeOptions(stored?.wheel_size ?? "")}</select>
+              <p class="hint">Used with ERD to estimate nipple seat position from bead seat (BSD).</p>
             </div>
             <div class="field">
               <label for="id_rim_inner_width_mm">Rim inner width (mm)</label>

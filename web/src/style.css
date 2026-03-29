@@ -115,6 +115,19 @@ body.page-wide .main {
   grid-column: 1 / -1;
 }
 
+.field-row {
+  display: grid;
+  gap: 1rem 1.25rem;
+}
+
+.field-row-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field-row-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .field label {
   display: block;
   font-weight: 600;
@@ -263,6 +276,14 @@ body.page-wide .main {
 
   .spoke-page-form-col {
     max-width: 100%;
+  }
+
+  .field-row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .field-row-2 {
+    grid-template-columns: 1fr;
   }
 }
 

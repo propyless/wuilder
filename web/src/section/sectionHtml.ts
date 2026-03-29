@@ -27,7 +27,16 @@ function detailStatsLine(fit: NippleFit): string {
 }
 
 /** Zoomed nipple / spoke tip -- matches legacy section_detail_svg.html */
-export function renderSectionDetailHtml(detail: SectionDetail, fit: NippleFit): string {
+export function renderSectionDetailHtml(
+  detail: SectionDetail,
+  fit: NippleFit,
+  seatRef?: {
+    wheelSizeLabel: string | null;
+    bsdMm: number | null;
+    seatFromBeadMm: number | null;
+    seatRadiusMm: number | null;
+  },
+): string {
   const d = detail;
   const topOuterDimY = d.rimOuterY - 22;
   const topInnerDimY = d.rimOuterY - 10;
@@ -38,10 +47,15 @@ export function renderSectionDetailHtml(detail: SectionDetail, fit: NippleFit): 
     d.spokeThreadH > 0
       ? `<rect x="${fmt2(d.spokeX)}" y="${fmt2(d.spokeTopY)}" width="${fmt2(d.spokeW)}" height="${fmt2(d.spokeThreadH)}" fill="url(#spoke-thread-hatch)" stroke="none" />`
       : "";
+  const seatRefLine =
+    seatRef?.bsdMm != null && seatRef?.seatFromBeadMm != null
+      ? `<p class="section-stats">Nipple seat reference (${seatRef.wheelSizeLabel ?? `BSD ${fmt0(seatRef.bsdMm)}`}): <strong>${fmt1(seatRef.seatFromBeadMm)}</strong> mm below bead seat (${fmt0(seatRef.bsdMm)} BSD) &middot; ERD seat radius <strong>${fmt1(seatRef.seatRadiusMm ?? 0)}</strong> mm.</p>`
+      : "";
 
   return `<section class="section-panel prose" aria-label="Spoke tip detail diagram">
   <h2>Spoke tip position</h2>
   <p class="section-stats">${detailStatsLine(fit)}</p>
+  ${seatRefLine}
   <div class="section-svg-wrap">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fmt0(d.viewW)} ${fmt0(d.viewH)}" role="img" aria-label="Zoomed cross-section: rim cavity, nipple, spoke tip position">
       <defs>
@@ -56,7 +70,6 @@ export function renderSectionDetailHtml(detail: SectionDetail, fit: NippleFit): 
           .det-thread-zone { fill: #8fa87a; fill-opacity: 0.45; stroke: #4a6630; stroke-width: 0.8; stroke-dasharray: 3 2; }
           .det-spoke { fill: #7a7a7a; stroke: #4a4a4a; stroke-width: 0.6; }
           .det-spoke-tip-cap { fill: #c44040; }
-          .det-centerline { stroke: #3d3931; stroke-width: 0.9; stroke-dasharray: 5 4; opacity: 0.75; }
           .det-ext { stroke: #2d2d2d; stroke-width: 0.65; }
           .det-dim { stroke: #1f1f1f; stroke-width: 0.9; fill: none; }
           .det-dim-label { fill: #1f1f1f; font-size: 11px; font-family: system-ui, sans-serif; font-weight: 600; }
@@ -81,7 +94,6 @@ export function renderSectionDetailHtml(detail: SectionDetail, fit: NippleFit): 
       <path class="det-rim-top-cutout" d="${d.rimTopCutoutPath}" />
       <path class="det-rim-top-cutout-border" d="${d.rimTopCutoutBorderPath}" />
       <path class="det-rim-cavity" d="${d.rimCavityPath}" />
-      <line class="det-centerline" x1="${fmt2(d.cx)}" y1="${fmt2(d.rimOuterY - 24)}" x2="${fmt2(d.cx)}" y2="${fmt2(d.rimBottomY)}" />
       <path class="det-nipple-head" d="${d.nippleHeadPath}" />
       <path class="det-nipple-shank" d="${d.nippleBodyPath}" />
       <path class="det-thread-zone" d="${d.nippleThreadZonePath}" />

@@ -264,6 +264,7 @@ export function buildSectionDetail(
     wellDepthMm: number;
     innerWidthMm: number;
     outerWidthMm?: number;
+    seatFromTopMm?: number;
     tipFromSeatMm: number;
     spokeThreadLengthMm?: number;
     innerWallDepthMm?: number | null;
@@ -298,13 +299,15 @@ export function buildSectionDetail(
   const cx = viewW / 2.0;
 
   const rimOuterY = paddingMm * s;
-  const seatY = rimOuterY + params.wellDepthMm * s;
+  const rimSeatY = rimOuterY + params.wellDepthMm * s;
+  // Keep nipple seated on the modeled rim seat plane in this cross-section view.
+  const nippleSeatY = rimSeatY;
 
   const headW = nipple.headDiameterMm * s;
   const headH = nipple.headHeightMm * s;
   const headLeft = cx - headW / 2;
-  const headTop = seatY - headH;
-  const headBot = seatY;
+  const headTop = nippleSeatY - headH;
+  const headBot = nippleSeatY;
 
   const nippleHeadPath =
     `M ${headLeft.toFixed(2)} ${headTop.toFixed(2)} ` +
@@ -315,18 +318,18 @@ export function buildSectionDetail(
   const shankW = nipple.shankDiameterMm * s;
   const shankL = cx - shankW / 2;
   const shankR = cx + shankW / 2;
-  const barrelEndY = seatY + nipple.bodyLengthMm * s;
+  const barrelEndY = nippleSeatY + nipple.bodyLengthMm * s;
 
   const nippleBodyPath =
-    `M ${shankL.toFixed(2)} ${seatY.toFixed(2)} L ${shankR.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `M ${shankL.toFixed(2)} ${nippleSeatY.toFixed(2)} L ${shankR.toFixed(2)} ${nippleSeatY.toFixed(2)} ` +
     `L ${shankR.toFixed(2)} ${barrelEndY.toFixed(2)} L ${shankL.toFixed(2)} ${barrelEndY.toFixed(2)} Z`;
 
   const threadBot = Math.min(
-    seatY + nipple.internalThreadLengthMm * s,
+    nippleSeatY + nipple.internalThreadLengthMm * s,
     barrelEndY,
   );
   const nippleThreadZonePath =
-    `M ${shankL.toFixed(2)} ${seatY.toFixed(2)} L ${shankR.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `M ${shankL.toFixed(2)} ${nippleSeatY.toFixed(2)} L ${shankR.toFixed(2)} ${nippleSeatY.toFixed(2)} ` +
     `L ${shankR.toFixed(2)} ${threadBot.toFixed(2)} L ${shankL.toFixed(2)} ${threadBot.toFixed(2)} Z`;
 
   /*
@@ -351,14 +354,15 @@ export function buildSectionDetail(
   const xInL = cx - innerW / 2;
   const xInR = cx + innerW / 2;
 
-  const wellPx = seatY - rimOuterY;
+  const wellPx = rimSeatY - rimOuterY;
   const r = Math.min(2.5 * s, wellPx * 0.06, innerW * 0.08);
 
-  const uExtMm = Math.max(1.5, params.wellDepthMm * 0.09);
-  const uExt = uExtMm * s;
+  // Keep technical depth dimension equal to the user-entered rim depth.
+  // The U-bed crown stays inside that envelope instead of extending below it.
+  const uExt = 0.0;
 
-  const bendY = seatY - wellPx * 0.18;
-  const uBotY = seatY + uExt;
+  const bendY = rimSeatY - wellPx * 0.18;
+  const uBotY = rimSeatY + uExt;
   const uHalf = shankW / 2 + 6;
 
   const hasIwd = params.innerWallDepthMm != null;
@@ -378,11 +382,11 @@ export function buildSectionDetail(
     `L ${(xOutR - r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
     `Q ${xOutR.toFixed(2)} ${rimOuterY.toFixed(2)} ${xOutR.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
     `L ${xOutR.toFixed(2)} ${bendY.toFixed(2)} ` +
-    `C ${xOutR.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `C ${xOutR.toFixed(2)} ${rimSeatY.toFixed(2)} ` +
     `${(cx + uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
     `${cx.toFixed(2)} ${uBotY.toFixed(2)} ` +
     `C ${(cx - uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
-    `${xOutL.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `${xOutL.toFixed(2)} ${rimSeatY.toFixed(2)} ` +
     `${xOutL.toFixed(2)} ${bendY.toFixed(2)} ` +
     `L ${xOutL.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
     `Q ${xOutL.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xOutL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
@@ -391,11 +395,11 @@ export function buildSectionDetail(
     `M ${(xOutL + r).toFixed(2)} ${rimOuterY.toFixed(2)} ` +
     `Q ${xOutL.toFixed(2)} ${rimOuterY.toFixed(2)} ${xOutL.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
     `L ${xOutL.toFixed(2)} ${bendY.toFixed(2)} ` +
-    `C ${xOutL.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `C ${xOutL.toFixed(2)} ${rimSeatY.toFixed(2)} ` +
     `${(cx - uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
     `${cx.toFixed(2)} ${uBotY.toFixed(2)} ` +
     `C ${(cx + uHalf).toFixed(2)} ${uBotY.toFixed(2)} ` +
-    `${xOutR.toFixed(2)} ${seatY.toFixed(2)} ` +
+    `${xOutR.toFixed(2)} ${rimSeatY.toFixed(2)} ` +
     `${xOutR.toFixed(2)} ${bendY.toFixed(2)} ` +
     `L ${xOutR.toFixed(2)} ${(rimOuterY + r).toFixed(2)} ` +
     `Q ${xOutR.toFixed(2)} ${rimOuterY.toFixed(2)} ${(xOutR - r).toFixed(2)} ${rimOuterY.toFixed(2)}`;
@@ -421,7 +425,7 @@ export function buildSectionDetail(
 
   const innerTMm = Math.max(1.5, params.wellDepthMm * 0.09);
   const innerT = innerTMm * s;
-  const cavBotY = seatY - innerT;
+  const cavBotY = rimSeatY - innerT;
   const cavL = xInL + sideT;
   const cavR = xInR - sideT;
 
@@ -517,21 +521,25 @@ export function buildSectionDetail(
   let rimCavityPath: string;
   if (hasIwd) {
     /*
-      Inner-wall-depth constrained cavity (rounded rectangle):
-
-         cavL +-------------------+ cavR   cavTopY
-              |                   |
-              |                   |
-              +-------------------+         cavBotY
+      Inner-wall-depth constrained cavity:
+      keep the explicit top (cavTopY) but follow the same
+      U-bed contour at the bottom as the rim profile.
     */
+    const cavBendY = bendY + sideT;
+    const cavSeatY = rimSeatY - sideT;
+    const cavUHalf = Math.max(uHalf - sideT, 0.0);
+    const cavUBot = uBotY - sideT;
     rimCavityPath =
       `M ${(cavL + cr).toFixed(2)} ${cavTopY.toFixed(2)} ` +
       `L ${(cavR - cr).toFixed(2)} ${cavTopY.toFixed(2)} ` +
       `Q ${cavR.toFixed(2)} ${cavTopY.toFixed(2)} ${cavR.toFixed(2)} ${(cavTopY + cr).toFixed(2)} ` +
-      `L ${cavR.toFixed(2)} ${(cavBotY - cr).toFixed(2)} ` +
-      `Q ${cavR.toFixed(2)} ${cavBotY.toFixed(2)} ${(cavR - cr).toFixed(2)} ${cavBotY.toFixed(2)} ` +
-      `L ${(cavL + cr).toFixed(2)} ${cavBotY.toFixed(2)} ` +
-      `Q ${cavL.toFixed(2)} ${cavBotY.toFixed(2)} ${cavL.toFixed(2)} ${(cavBotY - cr).toFixed(2)} ` +
+      `L ${cavR.toFixed(2)} ${cavBendY.toFixed(2)} ` +
+      `C ${cavR.toFixed(2)} ${cavSeatY.toFixed(2)} ` +
+      `${(cx + cavUHalf).toFixed(2)} ${cavUBot.toFixed(2)} ` +
+      `${cx.toFixed(2)} ${cavUBot.toFixed(2)} ` +
+      `C ${(cx - cavUHalf).toFixed(2)} ${cavUBot.toFixed(2)} ` +
+      `${cavL.toFixed(2)} ${cavSeatY.toFixed(2)} ` +
+      `${cavL.toFixed(2)} ${cavBendY.toFixed(2)} ` +
       `L ${cavL.toFixed(2)} ${(cavTopY + cr).toFixed(2)} ` +
       `Q ${cavL.toFixed(2)} ${cavTopY.toFixed(2)} ${(cavL + cr).toFixed(2)} ${cavTopY.toFixed(2)} ` +
       "Z";
@@ -546,7 +554,8 @@ export function buildSectionDetail(
               \_____ cx _____/      cavUBot
     */
     const cavBendY = bendY + sideT;
-    const cavUHalf = uHalf - sideT * 0.5;
+    const cavSeatY = rimSeatY - sideT;
+    const cavUHalf = Math.max(uHalf - sideT, 0.0);
     const cavUBot = uBotY - sideT;
 
     rimCavityPath =
@@ -554,18 +563,18 @@ export function buildSectionDetail(
       `L ${(cavR - cr).toFixed(2)} ${cavTopY.toFixed(2)} ` +
       `Q ${cavR.toFixed(2)} ${cavTopY.toFixed(2)} ${cavR.toFixed(2)} ${(cavTopY + cr).toFixed(2)} ` +
       `L ${cavR.toFixed(2)} ${cavBendY.toFixed(2)} ` +
-      `C ${cavR.toFixed(2)} ${cavBotY.toFixed(2)} ` +
+      `C ${cavR.toFixed(2)} ${cavSeatY.toFixed(2)} ` +
       `${(cx + cavUHalf).toFixed(2)} ${cavUBot.toFixed(2)} ` +
       `${cx.toFixed(2)} ${cavUBot.toFixed(2)} ` +
       `C ${(cx - cavUHalf).toFixed(2)} ${cavUBot.toFixed(2)} ` +
-      `${cavL.toFixed(2)} ${cavBotY.toFixed(2)} ` +
+      `${cavL.toFixed(2)} ${cavSeatY.toFixed(2)} ` +
       `${cavL.toFixed(2)} ${cavBendY.toFixed(2)} ` +
       `L ${cavL.toFixed(2)} ${(cavTopY + cr).toFixed(2)} ` +
       `Q ${cavL.toFixed(2)} ${cavTopY.toFixed(2)} ${(cavL + cr).toFixed(2)} ${cavTopY.toFixed(2)} ` +
       "Z";
   }
 
-  const tipY = seatY + params.tipFromSeatMm * s;
+  const tipY = nippleSeatY + params.tipFromSeatMm * s;
 
   const spokeWireMm = 2.0;
   const spokeW = spokeWireMm * s;
@@ -581,7 +590,7 @@ export function buildSectionDetail(
   const dimInnerWallX = xInR + 10;
   const dimBridgeX = xInR + 22;
 
-  const seatMidDy = (seatY - tipY) / 2 + 4;
+  const seatMidDy = (nippleSeatY - tipY) / 2 + 4;
   const rimMidDy = (tipY - rimOuterY) / 2 + 4;
 
   return {
@@ -597,7 +606,7 @@ export function buildSectionDetail(
     nippleHeadPath,
     nippleBodyPath,
     nippleThreadZonePath,
-    seatY,
+    seatY: nippleSeatY,
     rimOuterY,
     rimCavityTopY: cavTopY,
     rimCavityBotY: cavBotY,
