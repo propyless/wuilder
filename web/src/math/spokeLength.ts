@@ -119,10 +119,10 @@ export function rimEntryAngleDeg(params: {
 }
 
 /**
- * Extra shortening (mm) applied after hub hole and nipple correction when **both**
- * rim drill diameter and spoke diameter are supplied. Uses (rim + spoke) / 10, which
- * tracks common online calculators’ small delta vs plain triangle + hub hole (e.g.
- * 2.6 + 2.0 mm → 0.46 mm). Omit either field (or leave at 0) to skip.
+ * Extra shortening (mm) after hub hole and nipple when both diameters are positive.
+ * Uses **(rimDrillAtSeatMm + spokeDiameterMm) / 10** — an empirical nipple-seat
+ * trim, not “hole width” as **lateral stagger** between left/right rim holes (which
+ * Wuild does not model). Omit either (or 0) to skip.
  */
 export function rimDrillAndSpokeSeatCorrectionMm(
   rimHoleDiameterMm: number,

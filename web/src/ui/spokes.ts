@@ -609,7 +609,7 @@ function renderSpokeResultsToResultsCol(
     resultsCol.innerHTML = `
       <section class="results prose spoke-build-summary" role="region" aria-label="Spoke build summary">
         <div class="tension-stat-block-title">Build summary</div>
-        <p class="hint spoke-build-summary-hint">Averages per flange side (odd spoke # = left, even = right). Ordering length = triangle − hub hole Ø/2 + nipple correction − optional <strong>rim/spoke seat</strong> (rim + spoke)/10 mm when both rim hole Ø and spoke Ø are set. Head clearance: pitch × cos(lacing angle) − hub hole Ø. Rim entry angle in the wheel plane. <strong>Tension ratio</strong> (axial balance): <strong>left = 100%</strong>, right = % of left. Wrong offsets skew ratio badly.</p>
+        <p class="hint spoke-build-summary-hint">Averages per flange side (odd spoke # = left, even = right). Ordering length = triangle − hub hole Ø/2 + nipple − optional <strong>seat trim</strong> (rim drill + spoke Ø)/10 when both trim fields are set — not lateral rim “hole width” stagger. Head clearance: pitch × cos(lacing angle) − hub hole Ø. Rim entry angle in the wheel plane. <strong>Tension ratio</strong> (axial balance): <strong>left = 100%</strong>, right = % of left. Wrong offsets skew ratio badly.</p>
         <table class="spoke-build-summary-table">
           <thead>
             <tr>
@@ -766,15 +766,17 @@ export function renderSpokes(container: HTMLElement): void {
           <label for="id_nipple_correction_mm">Nipple correction (mm)</label>
           <input type="number" name="nipple_correction_mm" id="id_nipple_correction_mm" step="any" value="0" />
         </div>
+        <p class="hint field-span">Elsewhere, <strong>hole width</strong> often means <strong>lateral stagger</strong> between left and right rim holes (0 if centered; negative for crossover lacing). <strong>Wuild does not model that.</strong> The optional pair below is unrelated: nipple-seat drill Ø + spoke Ø for a small ordering-length trim <strong>(sum) / 10 mm</strong> when both are filled.</p>
         <div class="field-span field-row field-row-2">
           <div class="field">
-            <label for="id_rim_hole_diameter_mm">Rim hole Ø (mm)</label>
+            <label for="id_rim_hole_diameter_mm">Rim drill Ø at seat (mm)</label>
             <input type="number" name="rim_hole_diameter_mm" id="id_rim_hole_diameter_mm" min="0" max="10" step="any" placeholder="e.g. 2.6" />
-            <p class="hint">Optional. With <strong>spoke Ø</strong>, shortens ordering length by (rim + spoke) / 10 mm to match many calculators.</p>
+            <p class="hint">Nipple / rim seat drilling — <em>not</em> left–right hole stagger.</p>
           </div>
           <div class="field">
             <label for="id_spoke_diameter_mm">Spoke Ø (mm)</label>
             <input type="number" name="spoke_diameter_mm" id="id_spoke_diameter_mm" min="0" max="5" step="any" placeholder="e.g. 2.0" />
+            <p class="hint">Used only with rim drill Ø for the trim above.</p>
           </div>
         </div>
         <fieldset class="field-span section-fieldset">
