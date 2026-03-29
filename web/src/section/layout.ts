@@ -418,12 +418,14 @@ export function buildSectionDetail(
   const topSideT = Math.min(topSideTMm * s, maxTopSideT);
   const topCutL = xInL + topSideT;
   const topCutR = xInR - topSideT;
-  const bridgeTMm = Math.max(0.35, params.wellDepthMm * 0.015);
+  const bridgeTMm = Math.max(0.7, params.wellDepthMm * 0.03);
   const bridgeT = bridgeTMm * s;
-  const minTopCutDepth = Math.max(1.4 * s, wellPx * 0.12);
-  const maxTopCutBot = cavTopY - Math.max(bridgeT, 0.2 * s);
-  const requestedTopCutBot = rimOuterY + minTopCutDepth;
-  const topCutBotY = Math.min(requestedTopCutBot, maxTopCutBot);
+  const maxTopCutBot = cavTopY - Math.max(bridgeT, 0.25 * s);
+  // Keep the top cut close to the cavity, leaving only the bridge thickness.
+  const topCutBotY = Math.max(
+    rimOuterY + 0.8 * s,
+    maxTopCutBot,
+  );
   const topCutRounding = Math.min(
     1.6 * s,
     Math.max(topCutBotY - rimOuterY, 1.0) * 0.22,
