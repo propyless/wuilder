@@ -44,3 +44,6 @@ htmlcov/
 # Node (static web app)
 web/node_modules/
 web/dist/
+
+# Agent docs (local only)
+AGENTS.md
