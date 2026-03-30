@@ -28,6 +28,7 @@ import {
   loadFlangeCalcInputs,
   runFlangeCalc,
 } from "../storage/flangeCalc";
+import { escapeHtml } from "../util/escape";
 import { spokeOptions } from "./spokeOptions";
 
 function lengthKey(mm: number): number {
@@ -72,6 +73,7 @@ function renderSpokeResultsToResultsCol(
 
   const leftSpokes = spokes.filter((s) => s.side === "left");
   const rightSpokes = spokes.filter((s) => s.side === "right");
+  if (!leftSpokes.length || !rightSpokes.length) return;
   const avgLenLeftMm =
     leftSpokes.reduce((a, s) => a + s.lengthMm, 0) / leftSpokes.length;
   const avgLenRightMm =
@@ -213,7 +215,7 @@ function renderSpokeResultsToResultsCol(
           seatRadiusMm: erd / 2.0,
         });
       } catch (e) {
-        sectionPanelsHtml = `<p class="hint prose">Spoke tip diagram could not be drawn: ${e instanceof Error ? e.message : String(e)}</p>`;
+        sectionPanelsHtml = `<p class="hint prose">Spoke tip diagram could not be drawn: ${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`;
       }
     }
   }
