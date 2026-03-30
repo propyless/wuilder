@@ -141,7 +141,11 @@ export function renderSavedBuilds(container: HTMLElement): void {
       if (!window.confirm(`Delete saved build “${getSavedBuild(id)?.name ?? id}”?`)) return;
       deleteSavedBuild(id);
       renderSavedBuilds(container);
-      setStatus("Deleted.", false);
+      const freshStatus = container.querySelector("#saved-builds-status") as HTMLElement | null;
+      if (freshStatus) {
+        freshStatus.textContent = "Deleted.";
+        freshStatus.classList.remove("saved-builds-status--error");
+      }
     });
   });
 }
