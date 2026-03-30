@@ -166,13 +166,36 @@ export function analyzeSpokeForm(form: HTMLFormElement): SpokeFormModel {
   if (nippleId) {
     if (!findNipple(nippleId)) {
       tierBErrors.push("Unknown nipple preset.");
-    } else if (
-      spokeThread > 0 &&
-      (rimInnerW == null || rimWellD == null)
-    ) {
-      tierBErrors.push(
-        "Enter rim inner width and rim depth to draw the spoke-tip diagram (or set spoke thread length to 0).",
-      );
+    } else if (spokeThread > 0) {
+      const innerInvalid =
+        rimWStr !== "" && rimInnerW == null;
+      const wellInvalid = rimDStr !== "" && rimWellD == null;
+      if (rimInnerW != null && rimWellD != null) {
+        /* diagram inputs OK */
+      } else if (innerInvalid || wellInvalid) {
+        /* Range/parse errors already added above */
+      } else if (rimDStr === "" && iwdStr !== "") {
+        tierBErrors.push(
+          "Enter rim depth (mm)—the total inner well depth—not only inner wall depth—to draw the spoke-tip diagram (or set spoke thread length to 0).",
+        );
+        if (rimWStr === "") {
+          tierBErrors.push(
+            "Enter rim inner width (mm) as well.",
+          );
+        }
+      } else if (rimWStr === "" && rimDStr === "") {
+        tierBErrors.push(
+          "Enter rim inner width and rim depth to draw the spoke-tip diagram (or set spoke thread length to 0).",
+        );
+      } else if (rimWStr === "") {
+        tierBErrors.push(
+          "Enter rim inner width (mm) to draw the spoke-tip diagram (or set spoke thread length to 0).",
+        );
+      } else if (rimDStr === "") {
+        tierBErrors.push(
+          "Enter rim depth (mm) to draw the spoke-tip diagram (or set spoke thread length to 0).",
+        );
+      }
     }
   }
   if (iwdStr !== "") {
