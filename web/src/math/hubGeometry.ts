@@ -82,3 +82,34 @@ export function illustrativeOtherAsPctOfReference(params: {
   }
   return (100 * (wr * ll)) / (wl * lr);
 }
+
+export interface SpokeTensionBalanceDisplayPercents {
+  leftPct: number;
+  rightPct: number;
+}
+
+/**
+ * Build summary table values: the **higher-equilibrium-tension** side is always
+ * 100%; the other side is its tension as a percent of that side. This matches
+ * common spoke calculators (e.g. drive 100%, non-drive ~84% on a typical rear).
+ * Contrast: {@link illustrativeOtherAsPctOfReference} with `referenceSide: "left"`
+ * fixes left at 100% and can show the right column above 100% when that side is tighter.
+ */
+export function spokeTensionBalanceDisplayPercents(params: {
+  wLeftMm: number;
+  wRightMm: number;
+  avgLenLeftMm: number;
+  avgLenRightMm: number;
+}): SpokeTensionBalanceDisplayPercents {
+  const rightAsPctOfLeft = illustrativeOtherAsPctOfReference({
+    referenceSide: "left",
+    wLeftMm: params.wLeftMm,
+    wRightMm: params.wRightMm,
+    avgLenLeftMm: params.avgLenLeftMm,
+    avgLenRightMm: params.avgLenRightMm,
+  });
+  if (rightAsPctOfLeft <= 100) {
+    return { leftPct: 100, rightPct: rightAsPctOfLeft };
+  }
+  return { leftPct: 10000 / rightAsPctOfLeft, rightPct: 100 };
+}

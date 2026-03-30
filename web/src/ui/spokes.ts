@@ -1,4 +1,4 @@
-import { illustrativeOtherAsPctOfReference } from "../math/hubGeometry";
+import { spokeTensionBalanceDisplayPercents } from "../math/hubGeometry";
 import {
   buildSpokeResults,
   rimEntryAngleDeg,
@@ -106,9 +106,7 @@ function renderSpokeResultsToResultsCol(
     spokeCount: sc,
     side: "right",
   });
-  /** Right-side tension as % of left (left = 100% ref). Matches common calculators; reciprocal of “right = 100% ref”. */
-  const tensionRightPctOfLeft = illustrativeOtherAsPctOfReference({
-    referenceSide: "left",
+  const tensionPct = spokeTensionBalanceDisplayPercents({
     wLeftMm: lOff,
     wRightMm: rOff,
     avgLenLeftMm,
@@ -224,7 +222,7 @@ function renderSpokeResultsToResultsCol(
     resultsCol.innerHTML = `
       <section class="results prose spoke-build-summary" role="region" aria-label="Spoke build summary">
         <div class="tension-stat-block-title">Build summary</div>
-        <p class="hint spoke-build-summary-hint">Averages per flange side (odd spoke # = left, even = right). Ordering length = triangle − hub hole Ø/2 + nipple correction. Head clearance: pitch × cos(lacing angle) − hub hole Ø. Rim entry angle in the wheel plane. <strong>Tension ratio</strong> (axial balance): <strong>left = 100%</strong>, right = % of left. Wrong offsets skew ratio badly.</p>
+        <p class="hint spoke-build-summary-hint">Averages per flange side (odd spoke # = left, even = right). Ordering length = triangle − hub hole Ø/2 + nipple correction. Head clearance: pitch × cos(lacing angle) − hub hole Ø. Rim entry angle in the wheel plane. <strong>Tension ratio</strong> (equilibrium axial balance): the <strong>tighter</strong> side = 100%, the other = its % of that — same convention as typical spoke-length calculators.</p>
         <table class="spoke-build-summary-table">
           <thead>
             <tr>
@@ -251,8 +249,8 @@ function renderSpokeResultsToResultsCol(
             </tr>
             <tr>
               <th scope="row">Spoke tension ratio</th>
-              <td>100%</td>
-              <td>${tensionRightPctOfLeft.toFixed(0)}%</td>
+              <td>${tensionPct.leftPct.toFixed(0)}%</td>
+              <td>${tensionPct.rightPct.toFixed(0)}%</td>
             </tr>
           </tbody>
         </table>
@@ -353,7 +351,7 @@ export function renderSpokes(container: HTMLElement): void {
           </div>
         </div>
         ${flangePanelHtml()}
-        <p class="hint field-span">Left / right offsets = distance from <strong>hub center plane</strong> (mid-width) to that flange, same as <strong>L</strong> / <strong>R</strong> above. Rear wheels: non-drive is usually the <strong>larger</strong> offset; drive side the smaller — if those are reversed, tension ratio will read high (~120–140% instead of ~80–90%).</p>
+        <p class="hint field-span">Left / right offsets = distance from <strong>hub center plane</strong> (mid-width) to that flange, same as <strong>L</strong> / <strong>R</strong> above. Rear wheels: non-drive is usually the <strong>larger</strong> offset; drive side the smaller — if those are reversed, the looser side’s % will look too high vs other calculators.</p>
         <div class="field">
           <label for="id_left_flange_offset_mm">Left flange offset (mm)</label>
           <input type="number" name="left_flange_offset_mm" id="id_left_flange_offset_mm" required min="0" max="120" step="any" />
