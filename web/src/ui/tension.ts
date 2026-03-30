@@ -161,12 +161,18 @@ export function renderTension(container: HTMLElement): void {
     btn.addEventListener("click", () => confirmAndClearWheelData());
   });
 
-  const form = container.querySelector("#tension-map-form") as HTMLFormElement;
-  const chartPanel = container.querySelector("#tension-chart-panel") as HTMLElement;
-  const tbodyLeft = container.querySelector("#tension-tbody-left") as HTMLElement;
-  const tbodyRight = container.querySelector("#tension-tbody-right") as HTMLElement;
+  const form = container.querySelector<HTMLFormElement>("#tension-map-form");
+  const chartPanel = container.querySelector<HTMLElement>("#tension-chart-panel");
+  const tbodyLeft = container.querySelector<HTMLElement>("#tension-tbody-left");
+  const tbodyRight = container.querySelector<HTMLElement>("#tension-tbody-right");
   const theadCells = container.querySelectorAll(".tension-spoke-table thead tr th");
-  const nonFieldEl = container.querySelector("#tension-non-field-errors") as HTMLElement;
+  const nonFieldEl = container.querySelector<HTMLElement>("#tension-non-field-errors");
+  if (!form || !chartPanel || !tbodyLeft || !tbodyRight || !nonFieldEl) return;
+  const form_ = form;
+  const chartPanel_ = chartPanel;
+  const tbodyLeft_ = tbodyLeft;
+  const tbodyRight_ = tbodyRight;
+  const nonFieldEl_ = nonFieldEl;
 
   function updateTableHeaders(variancePct: number, ratio: boolean) {
     const label = `vs ±${variancePct.toFixed(0)}% ${ratio ? "(ratio target)" : "(side avg)"}`;
@@ -182,14 +188,14 @@ export function renderTension(container: HTMLElement): void {
     inputValues: Record<string, string>,
   ) {
     const nh = nSpokes / 2;
-    tbodyLeft.innerHTML = buildReadingRows(
+    tbodyLeft_.innerHTML = buildReadingRows(
       nh,
       fieldErrors,
       rows,
       "left",
       inputValues,
     );
-    tbodyRight.innerHTML = buildReadingRows(
+    tbodyRight_.innerHTML = buildReadingRows(
       nh,
       fieldErrors,
       rows,
@@ -205,10 +211,10 @@ export function renderTension(container: HTMLElement): void {
       tensionValidationFromSubmit.current = true;
     }
 
-    nonFieldEl.style.display = "none";
-    nonFieldEl.textContent = "";
+    nonFieldEl_.style.display = "none";
+    nonFieldEl_.textContent = "";
 
-    const fd = new FormData(form);
+    const fd = new FormData(form_);
     const nSpokes = parseInt(String(fd.get("spoke_count")), 10);
     const chartId = String(fd.get("tm1_chart") || defaultChart);
     const variancePct = parseFloat(String(fd.get("variance_percent")));
@@ -221,42 +227,42 @@ export function renderTension(container: HTMLElement): void {
       updateTableHeaders(variancePct, usesSideRatio(otherPct));
     }
 
-    const parsed = parseTensionForm(form, nSpokes, chartId);
+    const parsed = parseTensionForm(form_, nSpokes, chartId);
     if (parsed.nonFieldErrors.length) {
-      nonFieldEl.textContent = parsed.nonFieldErrors.join(" ");
-      nonFieldEl.style.display = "block";
+      nonFieldEl_.textContent = parsed.nonFieldErrors.join(" ");
+      nonFieldEl_.style.display = "block";
       if (tensionValidationFromSubmit.current) {
         rerenderReadingRows(
           nSpokes,
           parsed.fieldErrors,
           null,
-          captureTm1InputValues(form, nSpokes),
+          captureTm1InputValues(form_, nSpokes),
         );
       }
-      chartPanel.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Fix hub geometry (crosses vs spoke count) and use <strong>Update</strong>.</p></div>`;
-      (container.querySelector("#tension-wta-left") as HTMLElement).innerHTML =
-        "";
-      (container.querySelector("#tension-wta-right") as HTMLElement).innerHTML =
-        "";
+      chartPanel_.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Fix hub geometry (crosses vs spoke count) and use <strong>Update</strong>.</p></div>`;
+      const wtaLClear1 = container.querySelector<HTMLElement>("#tension-wta-left");
+      const wtaRClear1 = container.querySelector<HTMLElement>("#tension-wta-right");
+      if (wtaLClear1) wtaLClear1.innerHTML = "";
+      if (wtaRClear1) wtaRClear1.innerHTML = "";
       return;
     }
     if (Object.keys(parsed.fieldErrors).length) {
       if (!tensionValidationFromSubmit.current) {
-        nonFieldEl.style.display = "none";
-        chartPanel.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Enter a TM-1 reading in every cell for a live map (updates as you type).</p></div>`;
-        (container.querySelector("#tension-wta-left") as HTMLElement).innerHTML =
-          "";
-        (container.querySelector("#tension-wta-right") as HTMLElement).innerHTML =
-          "";
+        nonFieldEl_.style.display = "none";
+        chartPanel_.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Enter a TM-1 reading in every cell for a live map (updates as you type).</p></div>`;
+        const wtaLClear2 = container.querySelector<HTMLElement>("#tension-wta-left");
+        const wtaRClear2 = container.querySelector<HTMLElement>("#tension-wta-right");
+        if (wtaLClear2) wtaLClear2.innerHTML = "";
+        if (wtaRClear2) wtaRClear2.innerHTML = "";
         return;
       }
       rerenderReadingRows(
         nSpokes,
         parsed.fieldErrors,
         null,
-        captureTm1InputValues(form, nSpokes),
+        captureTm1InputValues(form_, nSpokes),
       );
-      chartPanel.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Fix the readings above and use <strong>Update</strong>.</p></div>`;
+      chartPanel_.innerHTML = `<div class="tension-chart-placeholder wheel-wrap"><p class="hint">Fix the readings above and use <strong>Update</strong>.</p></div>`;
       return;
     }
 
@@ -281,8 +287,8 @@ export function renderTension(container: HTMLElement): void {
     try {
       tensionRows = buildTensionSpokeRows(rowKw);
     } catch (e) {
-      nonFieldEl.textContent = e instanceof Error ? e.message : String(e);
-      nonFieldEl.style.display = "block";
+      nonFieldEl_.textContent = e instanceof Error ? e.message : String(e);
+      nonFieldEl_.style.display = "block";
       return;
     }
     rerenderReadingRows(
@@ -349,7 +355,7 @@ export function renderTension(container: HTMLElement): void {
       )
       .join("");
 
-    chartPanel.innerHTML = `
+    chartPanel_.innerHTML = `
       <div class="tension-side-averages" role="region" aria-label="Same-side average tension">
         <div class="tension-stat-block-title">Same-side average tension</div>
         <div class="tension-stat-dual">
@@ -387,10 +393,10 @@ export function renderTension(container: HTMLElement): void {
         <li><span class="legend-line" style="border-color: #9c2f2f;"></span> &gt;15%</li>
       </ul>`;
 
-    const wtaL = container.querySelector("#tension-wta-left") as HTMLElement;
-    const wtaR = container.querySelector("#tension-wta-right") as HTMLElement;
-    wtaL.innerHTML = wtaStatsHtml("Left side spokes", leftStats, variancePct);
-    wtaR.innerHTML = wtaStatsHtml("Right side spokes", rightStats, variancePct);
+    const wtaL = container.querySelector<HTMLElement>("#tension-wta-left");
+    const wtaR = container.querySelector<HTMLElement>("#tension-wta-right");
+    if (wtaL) wtaL.innerHTML = wtaStatsHtml("Left side spokes", leftStats, variancePct);
+    if (wtaR) wtaR.innerHTML = wtaStatsHtml("Right side spokes", rightStats, variancePct);
   }
 
   const { restored } = attachFormPersist(form, FORM_TENSION_KEY, { restore: true });
